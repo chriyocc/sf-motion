@@ -615,7 +615,7 @@
       "gencad": "",
       "idf": "",
       "netlist": "",
-      "plot": "",
+      "plot": "Export/",
       "pos_files": "",
       "specctra_dsn": "",
       "step": "foc_driver.step",
@@ -870,7 +870,7 @@
         "uuid": "07a63e33-0b4d-4f71-953d-91d6e5fc694b"
       }
     ],
-    "used_designators": "",
+    "used_designators": "R13,R38",
     "variants": []
   },
   "sheets": [

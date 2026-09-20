@@ -13,6 +13,16 @@ The project includes:
 
 > ⚠️ This project is under active development. Hardware and firmware may change between versions.
 
+## My Tips
+For everyday operation, calibration, control modes, plotting, and troubleshooting, see the [complete motor user guide](MOTOR_USER_GUIDE.md).
+
+To start virtual env
+`Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass`
+`.venv\Scripts\Activate.ps1`
+
+To start GUI
+`python communication/motor.py`
+
 ## Hardware Prerequisites
 
 You will need:
@@ -98,7 +108,7 @@ source .venv/bin/activate
 
 Install the required packages:
 ``` bash
-pip install numpy pyserial PyQt5 pyqtgraph
+pip install numpy pyserial PyQt5 pyqtgraph keyboard
 ```
 
 ## Getting Started

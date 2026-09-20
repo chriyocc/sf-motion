@@ -51,6 +51,41 @@
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
+#ifdef INIT_STAGE_TEST
+extern volatile uint8_t diagnostic_boot_stage;
+
+static void diagnostic_delay(void)
+{
+  for (volatile uint32_t i = 0; i < 800000; i++)
+  {
+  }
+}
+
+static void diagnostic_fault_blink(void)
+{
+  RCC->AHB1ENR |= RCC_AHB1ENR_GPIOCEN;
+  (void)RCC->AHB1ENR;
+
+  GPIOC->MODER &= ~((3U << (13U * 2U)) | (3U << (14U * 2U)));
+  GPIOC->MODER |= (1U << (13U * 2U)) | (1U << (14U * 2U));
+  GPIOC->OTYPER &= ~(GPIO_PIN_13 | GPIO_PIN_14);
+  GPIOC->PUPDR &= ~((3U << (13U * 2U)) | (3U << (14U * 2U)));
+
+  while (1)
+  {
+    for (uint8_t i = 0; i < diagnostic_boot_stage; i++)
+    {
+      GPIOC->BSRR = GPIO_PIN_13;
+      diagnostic_delay();
+      GPIOC->BSRR = GPIO_PIN_13 << 16U;
+      diagnostic_delay();
+    }
+    diagnostic_delay();
+    diagnostic_delay();
+    diagnostic_delay();
+  }
+}
+#endif
 
 /* USER CODE END 0 */
 
@@ -89,7 +124,9 @@ void NMI_Handler(void)
 void HardFault_Handler(void)
 {
   /* USER CODE BEGIN HardFault_IRQn 0 */
-
+#ifdef INIT_STAGE_TEST
+  diagnostic_fault_blink();
+#endif
   /* USER CODE END HardFault_IRQn 0 */
   while (1)
   {
@@ -104,7 +141,9 @@ void HardFault_Handler(void)
 void MemManage_Handler(void)
 {
   /* USER CODE BEGIN MemoryManagement_IRQn 0 */
-
+#ifdef INIT_STAGE_TEST
+  diagnostic_fault_blink();
+#endif
   /* USER CODE END MemoryManagement_IRQn 0 */
   while (1)
   {
@@ -119,7 +158,9 @@ void MemManage_Handler(void)
 void BusFault_Handler(void)
 {
   /* USER CODE BEGIN BusFault_IRQn 0 */
-
+#ifdef INIT_STAGE_TEST
+  diagnostic_fault_blink();
+#endif
   /* USER CODE END BusFault_IRQn 0 */
   while (1)
   {
@@ -134,7 +175,9 @@ void BusFault_Handler(void)
 void UsageFault_Handler(void)
 {
   /* USER CODE BEGIN UsageFault_IRQn 0 */
-
+#ifdef INIT_STAGE_TEST
+  diagnostic_fault_blink();
+#endif
   /* USER CODE END UsageFault_IRQn 0 */
   while (1)
   {

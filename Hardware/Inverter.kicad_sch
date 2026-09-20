@@ -1300,204 +1300,6 @@
 			)
 			(embedded_fonts no)
 		)
-		(symbol "Device:R_Shunt"
-			(pin_names
-				(offset 0)
-				(hide yes)
-			)
-			(exclude_from_sim no)
-			(in_bom yes)
-			(on_board yes)
-			(in_pos_files yes)
-			(duplicate_pin_numbers_are_jumpers no)
-			(property "Reference" "R"
-				(at -2.032 0 90)
-				(show_name no)
-				(do_not_autoplace no)
-				(effects
-					(font
-						(size 1.27 1.27)
-					)
-				)
-			)
-			(property "Value" "R_Shunt"
-				(at 0 0 90)
-				(show_name no)
-				(do_not_autoplace no)
-				(effects
-					(font
-						(size 1.27 1.27)
-					)
-				)
-			)
-			(property "Footprint" ""
-				(at -1.778 0 90)
-				(show_name no)
-				(do_not_autoplace no)
-				(hide yes)
-				(effects
-					(font
-						(size 1.27 1.27)
-					)
-				)
-			)
-			(property "Datasheet" ""
-				(at 0 0 0)
-				(show_name no)
-				(do_not_autoplace no)
-				(hide yes)
-				(effects
-					(font
-						(size 1.27 1.27)
-					)
-				)
-			)
-			(property "Description" "Shunt resistor with Kelvin connections"
-				(at 0 0 0)
-				(show_name no)
-				(do_not_autoplace no)
-				(hide yes)
-				(effects
-					(font
-						(size 1.27 1.27)
-					)
-				)
-			)
-			(property "ki_keywords" "R res shunt resistor"
-				(at 0 0 0)
-				(show_name no)
-				(do_not_autoplace no)
-				(hide yes)
-				(effects
-					(font
-						(size 1.27 1.27)
-					)
-				)
-			)
-			(property "ki_fp_filters" "R_*Shunt*"
-				(at 0 0 0)
-				(show_name no)
-				(do_not_autoplace no)
-				(hide yes)
-				(effects
-					(font
-						(size 1.27 1.27)
-					)
-				)
-			)
-			(symbol "R_Shunt_0_1"
-				(rectangle
-					(start -1.016 -2.54)
-					(end 1.016 2.54)
-					(stroke
-						(width 0.254)
-						(type default)
-					)
-					(fill
-						(type none)
-					)
-				)
-				(polyline
-					(pts
-						(xy 0 -2.54) (xy 1.27 -2.54)
-					)
-					(stroke
-						(width 0)
-						(type default)
-					)
-					(fill
-						(type none)
-					)
-				)
-				(polyline
-					(pts
-						(xy 1.27 2.54) (xy 0 2.54)
-					)
-					(stroke
-						(width 0)
-						(type default)
-					)
-					(fill
-						(type none)
-					)
-				)
-			)
-			(symbol "R_Shunt_1_1"
-				(pin passive line
-					(at 0 5.08 270)
-					(length 2.54)
-					(name ""
-						(effects
-							(font
-								(size 1.27 1.27)
-							)
-						)
-					)
-					(number "1"
-						(effects
-							(font
-								(size 1.27 1.27)
-							)
-						)
-					)
-				)
-				(pin passive line
-					(at 2.54 2.54 180)
-					(length 1.27)
-					(name ""
-						(effects
-							(font
-								(size 1.27 1.27)
-							)
-						)
-					)
-					(number "2"
-						(effects
-							(font
-								(size 1.27 1.27)
-							)
-						)
-					)
-				)
-				(pin passive line
-					(at 2.54 -2.54 180)
-					(length 1.27)
-					(name ""
-						(effects
-							(font
-								(size 1.27 1.27)
-							)
-						)
-					)
-					(number "3"
-						(effects
-							(font
-								(size 1.27 1.27)
-							)
-						)
-					)
-				)
-				(pin passive line
-					(at 0 -5.08 90)
-					(length 2.54)
-					(name ""
-						(effects
-							(font
-								(size 1.27 1.27)
-							)
-						)
-					)
-					(number "4"
-						(effects
-							(font
-								(size 1.27 1.27)
-							)
-						)
-					)
-				)
-			)
-			(embedded_fonts no)
-		)
 		(symbol "Transistor_FET:CSD18532NQ5B"
 			(pin_names
 				(offset 0)
@@ -2482,6 +2284,12 @@
 		(uuid "08734ebb-86ae-4d3e-a598-7566976b96b5")
 	)
 	(junction
+		(at 113.03 166.37)
+		(diameter 0)
+		(color 0 0 0 0)
+		(uuid "096660cf-dd58-4a9a-bbef-a9c3f735c343")
+	)
+	(junction
 		(at 238.76 24.13)
 		(diameter 0)
 		(color 0 0 0 0)
@@ -2506,10 +2314,22 @@
 		(uuid "1cb39d88-0295-4f92-8d56-106e505916be")
 	)
 	(junction
+		(at 113.03 49.53)
+		(diameter 0)
+		(color 0 0 0 0)
+		(uuid "27b6dad7-38fa-4d6f-8758-17436a940aa6")
+	)
+	(junction
 		(at 129.54 180.34)
 		(diameter 0)
 		(color 0 0 0 0)
 		(uuid "28c8bc7d-e995-4637-99e9-b0a1c85634f1")
+	)
+	(junction
+		(at 113.03 107.95)
+		(diameter 0)
+		(color 0 0 0 0)
+		(uuid "290b0b14-f34e-4a5e-96a5-9209d57fc826")
 	)
 	(junction
 		(at 129.54 96.52)
@@ -2528,6 +2348,12 @@
 		(diameter 0)
 		(color 0 0 0 0)
 		(uuid "4398c1af-fe11-41ad-a934-dc5efe4edcd6")
+	)
+	(junction
+		(at 113.03 175.26)
+		(diameter 0)
+		(color 0 0 0 0)
+		(uuid "49783dc7-c442-4768-a6d3-ce479bcc9d86")
 	)
 	(junction
 		(at 85.09 82.55)
@@ -2626,6 +2452,12 @@
 		(uuid "b7612b6c-5eb1-4166-8267-66e57392a56a")
 	)
 	(junction
+		(at 113.03 58.42)
+		(diameter 0)
+		(color 0 0 0 0)
+		(uuid "bbeaa6e9-4638-4ac6-975b-c7ea822b0d90")
+	)
+	(junction
 		(at 215.9 24.13)
 		(diameter 0)
 		(color 0 0 0 0)
@@ -2642,6 +2474,12 @@
 		(diameter 0)
 		(color 0 0 0 0)
 		(uuid "c402a712-d2d7-405b-9041-8e1f1dda645c")
+	)
+	(junction
+		(at 113.03 116.84)
+		(diameter 0)
+		(color 0 0 0 0)
+		(uuid "c53297d4-3ae0-44a5-abc6-35af559441f9")
 	)
 	(junction
 		(at 160.02 168.91)
@@ -2777,6 +2615,16 @@
 	)
 	(wire
 		(pts
+			(xy 113.03 116.84) (xy 113.03 121.92)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "0c260c07-f6ac-4c68-9775-72701f080063")
+	)
+	(wire
+		(pts
 			(xy 132.08 118.11) (xy 132.08 119.38)
 		)
 		(stroke
@@ -2794,6 +2642,26 @@
 			(type default)
 		)
 		(uuid "0e450b5e-e2f2-471b-b1b6-080881dbee31")
+	)
+	(wire
+		(pts
+			(xy 115.57 171.45) (xy 115.57 175.26)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "13a144ce-f5b7-4bf1-bd94-fc169fff39fa")
+	)
+	(wire
+		(pts
+			(xy 113.03 166.37) (xy 124.46 166.37)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "15e29e95-1284-45aa-a3da-0b626b17bc4f")
 	)
 	(wire
 		(pts
@@ -2844,16 +2712,6 @@
 			(type default)
 		)
 		(uuid "193a5cb5-be24-4e91-ab8d-2cf4a5f698de")
-	)
-	(wire
-		(pts
-			(xy 115.57 107.95) (xy 124.46 107.95)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "19a775b9-3525-482f-a107-e6af5c7efc7b")
 	)
 	(wire
 		(pts
@@ -2957,6 +2815,16 @@
 	)
 	(wire
 		(pts
+			(xy 113.03 175.26) (xy 115.57 175.26)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "385d5f87-ed31-4dc3-8682-ecdc5638cdf1")
+	)
+	(wire
+		(pts
 			(xy 58.42 39.37) (xy 64.77 39.37)
 		)
 		(stroke
@@ -2974,6 +2842,16 @@
 			(type default)
 		)
 		(uuid "3a39c34b-3208-4522-b5a6-2fe0f3151436")
+	)
+	(wire
+		(pts
+			(xy 113.03 163.83) (xy 113.03 166.37)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "3c6b9788-e40a-4f24-9427-17b9403b92c4")
 	)
 	(wire
 		(pts
@@ -3167,6 +3045,16 @@
 	)
 	(wire
 		(pts
+			(xy 113.03 58.42) (xy 115.57 58.42)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "4d7e500d-8b19-486b-84c7-081694107cbd")
+	)
+	(wire
+		(pts
 			(xy 158.75 110.49) (xy 160.02 110.49)
 		)
 		(stroke
@@ -3197,7 +3085,7 @@
 	)
 	(wire
 		(pts
-			(xy 113.03 57.15) (xy 113.03 63.5)
+			(xy 113.03 57.15) (xy 113.03 58.42)
 		)
 		(stroke
 			(width 0)
@@ -3277,6 +3165,16 @@
 	)
 	(wire
 		(pts
+			(xy 113.03 46.99) (xy 113.03 49.53)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "5cd7e5df-3eda-41a1-a7af-3b33df4cfad6")
+	)
+	(wire
+		(pts
 			(xy 132.08 59.69) (xy 132.08 60.96)
 		)
 		(stroke
@@ -3297,6 +3195,16 @@
 	)
 	(wire
 		(pts
+			(xy 113.03 175.26) (xy 113.03 180.34)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "6057ee84-bacc-4b2b-a386-9f92e2df3ef5")
+	)
+	(wire
+		(pts
 			(xy 85.09 102.87) (xy 85.09 105.41)
 		)
 		(stroke
@@ -3314,6 +3222,16 @@
 			(type default)
 		)
 		(uuid "62b348d7-c82d-4a70-90e9-ad2f92884c3f")
+	)
+	(wire
+		(pts
+			(xy 115.57 54.61) (xy 115.57 58.42)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "63dc70bd-4e9c-445b-a054-841b2e63cc0b")
 	)
 	(wire
 		(pts
@@ -3354,6 +3272,16 @@
 			(type default)
 		)
 		(uuid "6912e30c-1721-4cb6-b81e-6518e38b008c")
+	)
+	(wire
+		(pts
+			(xy 113.03 116.84) (xy 115.57 116.84)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "6b1762ce-22b5-4cef-9da7-af6a6e566062")
 	)
 	(wire
 		(pts
@@ -3507,13 +3435,13 @@
 	)
 	(wire
 		(pts
-			(xy 113.03 115.57) (xy 113.03 121.92)
+			(xy 113.03 105.41) (xy 113.03 107.95)
 		)
 		(stroke
 			(width 0)
 			(type default)
 		)
-		(uuid "823e4246-0e07-4ea5-8f83-23b77b637c4d")
+		(uuid "818e0da0-f86b-4ec1-8a61-4edcd4faf9c7")
 	)
 	(wire
 		(pts
@@ -3597,16 +3525,6 @@
 	)
 	(wire
 		(pts
-			(xy 115.57 166.37) (xy 124.46 166.37)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "8ea22c84-d992-4237-88f9-193b0fa47115")
-	)
-	(wire
-		(pts
 			(xy 223.52 24.13) (xy 231.14 24.13)
 		)
 		(stroke
@@ -3687,6 +3605,16 @@
 	)
 	(wire
 		(pts
+			(xy 113.03 49.53) (xy 124.46 49.53)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "9cfe1354-6483-4204-b976-2bae34c758a5")
+	)
+	(wire
+		(pts
 			(xy 158.75 52.07) (xy 160.02 52.07)
 		)
 		(stroke
@@ -3704,6 +3632,16 @@
 			(type default)
 		)
 		(uuid "a0798abe-4524-4621-b575-88942f808ab9")
+	)
+	(wire
+		(pts
+			(xy 115.57 113.03) (xy 115.57 116.84)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "a0d5a7ce-0c5e-4203-be92-e3b6f008d2b2")
 	)
 	(wire
 		(pts
@@ -3757,7 +3695,7 @@
 	)
 	(wire
 		(pts
-			(xy 113.03 173.99) (xy 113.03 180.34)
+			(xy 113.03 173.99) (xy 113.03 175.26)
 		)
 		(stroke
 			(width 0)
@@ -3864,6 +3802,16 @@
 			(type default)
 		)
 		(uuid "bafc47b7-7312-4a05-8708-ccf20131f2b2")
+	)
+	(wire
+		(pts
+			(xy 113.03 107.95) (xy 124.46 107.95)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "bb0288bb-6edc-418c-b45d-3cb998469a4c")
 	)
 	(wire
 		(pts
@@ -3977,16 +3925,6 @@
 	)
 	(wire
 		(pts
-			(xy 115.57 49.53) (xy 124.46 49.53)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "d24a8100-e936-46a5-b7e0-d944c63ee925")
-	)
-	(wire
-		(pts
 			(xy 204.47 95.25) (xy 204.47 96.52)
 		)
 		(stroke
@@ -4014,6 +3952,16 @@
 			(type default)
 		)
 		(uuid "d6a0ac60-0006-46fd-af02-ef0feb214db4")
+	)
+	(wire
+		(pts
+			(xy 113.03 58.42) (xy 113.03 63.5)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "d7047120-3aef-4d20-80b1-94db332b4119")
 	)
 	(wire
 		(pts
@@ -4114,6 +4062,16 @@
 			(type default)
 		)
 		(uuid "e0d5be57-48ee-48d7-b68d-208249394446")
+	)
+	(wire
+		(pts
+			(xy 113.03 115.57) (xy 113.03 116.84)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "e10ded08-94b1-4bd1-89b0-0dc37b42c04a")
 	)
 	(wire
 		(pts
@@ -7274,159 +7232,6 @@
 		)
 	)
 	(symbol
-		(lib_id "Device:R_Shunt")
-		(at 113.03 168.91 0)
-		(unit 1)
-		(body_style 1)
-		(exclude_from_sim no)
-		(in_bom yes)
-		(on_board yes)
-		(in_pos_files yes)
-		(dnp no)
-		(uuid "3552742c-7ddf-45e0-b2e5-78ca9832aaf8")
-		(property "Reference" "R23"
-			(at 110.49 167.6399 0)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify right)
-			)
-		)
-		(property "Value" "0.01R"
-			(at 110.49 170.1799 0)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify right)
-			)
-		)
-		(property "Footprint" "Resistor_SMD:R_Shunt_Ohmite_LVK20"
-			(at 111.252 168.91 90)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Datasheet" ""
-			(at 113.03 168.91 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Description" "Shunt resistor with Kelvin connections"
-			(at 113.03 168.91 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "LCSC Part #" "C844898"
-			(at 113.03 168.91 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "KLC_S3.3" ""
-			(at 113.03 168.91 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "KLC_S4.1" ""
-			(at 113.03 168.91 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Availability" ""
-			(at 113.03 168.91 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Price" ""
-			(at 113.03 168.91 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "SNAPEDA_PN" ""
-			(at 113.03 168.91 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(pin "2"
-			(uuid "a77b0897-d954-4bd7-991a-59295c3c125b")
-		)
-		(pin "3"
-			(uuid "7866b1d7-39e5-4f32-88cb-db0f08b7f8f0")
-		)
-		(pin "1"
-			(uuid "a46df7b0-10ee-4142-9b9a-dadc4c6a6393")
-		)
-		(pin "4"
-			(uuid "2ca08513-913b-4066-ae83-488bfbb6ac4d")
-		)
-		(instances
-			(project "foc_driver"
-				(path "/07a63e33-0b4d-4f71-953d-91d6e5fc694b/bed8668e-8d6d-4713-9517-ef3a7c897f69"
-					(reference "R23")
-					(unit 1)
-				)
-			)
-		)
-	)
-	(symbol
 		(lib_id "power:GND")
 		(at 102.87 149.86 0)
 		(unit 1)
@@ -7798,6 +7603,88 @@
 		)
 	)
 	(symbol
+		(lib_id "Device:R")
+		(at 113.03 53.34 0)
+		(unit 1)
+		(body_style 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(in_pos_files yes)
+		(dnp no)
+		(fields_autoplaced yes)
+		(uuid "3c0690d4-8f46-4ee1-a1eb-ac8778e6fa19")
+		(property "Reference" "R13"
+			(at 115.57 52.0699 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Value" "0.01R"
+			(at 115.57 54.6099 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Footprint" "Resistor_SMD:R_2512_6332Metric"
+			(at 111.252 53.34 90)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Datasheet" ""
+			(at 113.03 53.34 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Description" "Resistor"
+			(at 113.03 53.34 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(pin "2"
+			(uuid "344b0de4-6f84-4645-8eda-a4ff1b9a170b")
+		)
+		(pin "1"
+			(uuid "2845d75e-e08d-49db-9216-f89f0bca91e2")
+		)
+		(instances
+			(project "foc_driver"
+				(path "/07a63e33-0b4d-4f71-953d-91d6e5fc694b/bed8668e-8d6d-4713-9517-ef3a7c897f69"
+					(reference "R13")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
 		(lib_id "Device:C")
 		(at 160.02 115.57 0)
 		(unit 1)
@@ -7940,159 +7827,6 @@
 			(project "foc_driver"
 				(path "/07a63e33-0b4d-4f71-953d-91d6e5fc694b/bed8668e-8d6d-4713-9517-ef3a7c897f69"
 					(reference "C42")
-					(unit 1)
-				)
-			)
-		)
-	)
-	(symbol
-		(lib_id "Device:R_Shunt")
-		(at 113.03 110.49 0)
-		(unit 1)
-		(body_style 1)
-		(exclude_from_sim no)
-		(in_bom yes)
-		(on_board yes)
-		(in_pos_files yes)
-		(dnp no)
-		(uuid "488cc819-5726-4349-a27f-329e20496d11")
-		(property "Reference" "R19"
-			(at 110.49 109.2199 0)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify right)
-			)
-		)
-		(property "Value" "0.01R"
-			(at 110.49 111.7599 0)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify right)
-			)
-		)
-		(property "Footprint" "Resistor_SMD:R_Shunt_Ohmite_LVK20"
-			(at 111.252 110.49 90)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Datasheet" ""
-			(at 113.03 110.49 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Description" "Shunt resistor with Kelvin connections"
-			(at 113.03 110.49 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "LCSC Part #" "C844898"
-			(at 113.03 110.49 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "KLC_S3.3" ""
-			(at 113.03 110.49 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "KLC_S4.1" ""
-			(at 113.03 110.49 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Availability" ""
-			(at 113.03 110.49 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Price" ""
-			(at 113.03 110.49 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "SNAPEDA_PN" ""
-			(at 113.03 110.49 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(pin "2"
-			(uuid "39c85810-43f9-4c88-9b72-52bebda681c2")
-		)
-		(pin "3"
-			(uuid "31eeb435-acb6-4bce-a280-a6d2b6ec4826")
-		)
-		(pin "1"
-			(uuid "bb624ef6-8cc4-48f2-82b7-979ab7bcd547")
-		)
-		(pin "4"
-			(uuid "ca1ab1e5-bdd4-4114-b84b-f13a4f433f1d")
-		)
-		(instances
-			(project "foc_driver"
-				(path "/07a63e33-0b4d-4f71-953d-91d6e5fc694b/bed8668e-8d6d-4713-9517-ef3a7c897f69"
-					(reference "R19")
 					(unit 1)
 				)
 			)
@@ -8249,6 +7983,88 @@
 			(project "foc_driver"
 				(path "/07a63e33-0b4d-4f71-953d-91d6e5fc694b/bed8668e-8d6d-4713-9517-ef3a7c897f69"
 					(reference "#PWR048")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "Device:R")
+		(at 113.03 170.18 0)
+		(unit 1)
+		(body_style 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(in_pos_files yes)
+		(dnp no)
+		(fields_autoplaced yes)
+		(uuid "49d38e6e-c012-4b4d-a74f-8159a17139a9")
+		(property "Reference" "R23"
+			(at 115.57 168.9099 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Value" "0.01R"
+			(at 115.57 171.4499 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Footprint" "Resistor_SMD:R_2512_6332Metric"
+			(at 111.252 170.18 90)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Datasheet" ""
+			(at 113.03 170.18 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Description" "Resistor"
+			(at 113.03 170.18 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(pin "2"
+			(uuid "45ba0006-4ace-410d-b513-095f8cc8375c")
+		)
+		(pin "1"
+			(uuid "0c92629b-79eb-4612-9532-0486fe63f240")
+		)
+		(instances
+			(project "foc_driver"
+				(path "/07a63e33-0b4d-4f71-953d-91d6e5fc694b/bed8668e-8d6d-4713-9517-ef3a7c897f69"
+					(reference "R23")
 					(unit 1)
 				)
 			)
@@ -8545,159 +8361,6 @@
 			(project "foc_driver"
 				(path "/07a63e33-0b4d-4f71-953d-91d6e5fc694b/bed8668e-8d6d-4713-9517-ef3a7c897f69"
 					(reference "J2")
-					(unit 1)
-				)
-			)
-		)
-	)
-	(symbol
-		(lib_id "Device:R_Shunt")
-		(at 113.03 52.07 0)
-		(unit 1)
-		(body_style 1)
-		(exclude_from_sim no)
-		(in_bom yes)
-		(on_board yes)
-		(in_pos_files yes)
-		(dnp no)
-		(uuid "510912e6-98b9-467b-97ef-f530fc518329")
-		(property "Reference" "R13"
-			(at 110.49 50.7999 0)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify right)
-			)
-		)
-		(property "Value" "0.01R"
-			(at 110.49 53.3399 0)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify right)
-			)
-		)
-		(property "Footprint" "Resistor_SMD:R_Shunt_Ohmite_LVK20"
-			(at 111.252 52.07 90)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Datasheet" ""
-			(at 113.03 52.07 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Description" "Shunt resistor with Kelvin connections"
-			(at 113.03 52.07 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "LCSC Part #" "C844898"
-			(at 113.03 52.07 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "KLC_S3.3" ""
-			(at 113.03 52.07 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "KLC_S4.1" ""
-			(at 113.03 52.07 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Availability" ""
-			(at 113.03 52.07 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Price" ""
-			(at 113.03 52.07 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "SNAPEDA_PN" ""
-			(at 113.03 52.07 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(pin "2"
-			(uuid "e35eeab0-e15c-40f8-a31b-bb28a0d7c9dd")
-		)
-		(pin "3"
-			(uuid "84c7fcf5-f295-4b4a-a872-e5c18b111561")
-		)
-		(pin "1"
-			(uuid "a3eaeb69-59cd-438b-b38d-8e188666d785")
-		)
-		(pin "4"
-			(uuid "1cc007e8-0767-4aba-8207-40b22823cb03")
-		)
-		(instances
-			(project "foc_driver"
-				(path "/07a63e33-0b4d-4f71-953d-91d6e5fc694b/bed8668e-8d6d-4713-9517-ef3a7c897f69"
-					(reference "R13")
 					(unit 1)
 				)
 			)
@@ -14469,6 +14132,88 @@
 			(project "foc_driver"
 				(path "/07a63e33-0b4d-4f71-953d-91d6e5fc694b/bed8668e-8d6d-4713-9517-ef3a7c897f69"
 					(reference "C28")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "Device:R")
+		(at 113.03 111.76 0)
+		(unit 1)
+		(body_style 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(in_pos_files yes)
+		(dnp no)
+		(fields_autoplaced yes)
+		(uuid "dd5e99f5-acf5-4a59-97ee-11ebc74063e9")
+		(property "Reference" "R19"
+			(at 115.57 110.4899 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Value" "0.01R"
+			(at 115.57 113.0299 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Footprint" "Resistor_SMD:R_2512_6332Metric"
+			(at 111.252 111.76 90)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Datasheet" ""
+			(at 113.03 111.76 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Description" "Resistor"
+			(at 113.03 111.76 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(pin "2"
+			(uuid "2ea761fe-5536-4a0a-b82a-e28700116d3a")
+		)
+		(pin "1"
+			(uuid "d214705b-c17b-4050-a747-242a1ed74c2e")
+		)
+		(instances
+			(project "foc_driver"
+				(path "/07a63e33-0b4d-4f71-953d-91d6e5fc694b/bed8668e-8d6d-4713-9517-ef3a7c897f69"
+					(reference "R19")
 					(unit 1)
 				)
 			)
