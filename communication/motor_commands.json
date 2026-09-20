@@ -1,0 +1,609 @@
+{
+    "commands": {
+        "plotter_add_line": {
+            "code": 7,
+            "args": [
+                {
+                    "name": "addr",
+                    "type": "uint16",
+                    "converter": "plotter_addr"
+                }
+            ],
+            "response": [{"name": "err_code", "type": "uint8"}]
+        },
+        "plotter_remove_line": {
+            "code": 8,
+            "args": [
+                {
+                    "name": "addr",
+                    "type": "uint16",
+                    "converter": "plotter_addr"
+                }
+            ],
+            "response": [{"name": "err_code", "type": "uint8"}]
+        },
+        "set_default_config": {
+            "code": 9,
+            "args": [],
+            "response": [{"name": "err_code", "type": "uint8"}]
+        },
+        "save_config": {
+            "code": 10,
+            "args": [],
+            "response": [{"name": "err_code", "type": "uint8"}]
+        },
+        "set_foc_mode": {
+            "code": 11,
+            "args": [
+                {
+                    "name": "mode",
+                    "type": "uint8"
+                }
+            ],
+            "response": [{"name": "err_code", "type": "uint8"}]
+        },
+        "get_foc_mode": {
+            "code": 12,
+            "args": [],
+            "response": [
+                {
+                    "name": "mode",
+                    "type": "uint8"
+                }
+            ]
+        },
+        "set_foc_motor_mode": {
+            "code": 13,
+            "args": [
+                {
+                    "name": "mode",
+                    "type": "uint8"
+                }
+            ],
+            "response": [{"name": "err_code", "type": "uint8"}]
+        },
+        "get_foc_motor_mode": {
+            "code": 14,
+            "args": [],
+            "response": [
+                {
+                    "name": "mode",
+                    "type": "uint8"
+                }
+            ]
+        },
+        "set_pole_pairs": {
+            "code": 15,
+            "args": [
+                {
+                    "name": "value",
+                    "type": "uint8"
+                }
+            ],
+            "response": [{"name": "err_code", "type": "uint8"}]
+        },
+        "get_pole_pairs": {
+            "code": 16,
+            "args": [],
+            "response": [
+                {
+                    "name": "value",
+                    "type": "uint8"
+                }
+            ]
+        },
+        "set_kv": {
+            "code": 17,
+            "args": [
+                {
+                    "name": "value",
+                    "type": "float"
+                }
+            ],
+            "response": [{"name": "err_code", "type": "uint8"}]
+        },
+        "get_kv": {
+            "code": 18,
+            "args": [],
+            "response": [
+                {
+                    "name": "value",
+                    "type": "float"
+                }
+            ]
+        },
+        "set_rs": {
+            "code": 19,
+            "args": [
+                {
+                    "name": "value",
+                    "type": "float"
+                }
+            ],
+            "response": [{"name": "err_code", "type": "uint8"}]
+        },
+        "get_rs": {
+            "code": 20,
+            "args": [],
+            "response": [
+                {
+                    "name": "value",
+                    "type": "float"
+                }
+            ]
+        },
+        "set_ld": {
+            "code": 21,
+            "args": [
+                {
+                    "name": "value",
+                    "type": "float"
+                }
+            ],
+            "response": [{"name": "err_code", "type": "uint8"}]
+        },
+        "get_ld": {
+            "code": 22,
+            "args": [],
+            "response": [
+                {
+                    "name": "value",
+                    "type": "float"
+                }
+            ]
+        },
+        "set_lq": {
+            "code": 23,
+            "args": [
+                {
+                    "name": "value",
+                    "type": "float"
+                }
+            ],
+            "response": [{"name": "err_code", "type": "uint8"}]
+        },
+        "get_lq": {
+            "code": 24,
+            "args": [],
+            "response": [
+                {
+                    "name": "value",
+                    "type": "float"
+                }
+            ]
+        },
+        "set_flux_linkage": {
+            "code": 25,
+            "args": [
+                {
+                    "name": "value",
+                    "type": "float"
+                }
+            ],
+            "response": [{"name": "err_code", "type": "uint8"}]
+        },
+        "get_flux_linkage": {
+            "code": 26,
+            "args": [],
+            "response": [
+                {
+                    "name": "value",
+                    "type": "float"
+                }
+            ]
+        },
+        "set_pid_id": {
+            "code": 27,
+            "args": [
+                {
+                    "name": "kp",
+                    "type": "float"
+                },
+                {
+                    "name": "ki",
+                    "type": "float"
+                },
+                {
+                    "name": "deadband",
+                    "type": "float"
+                }
+            ],
+            "response": [{"name": "err_code", "type": "uint8"}]
+        },
+        "get_pid_id": {
+            "code": 28,
+            "args": [],
+            "response": [
+                {
+                    "name": "kp",
+                    "type": "float"
+                },
+                {
+                    "name": "ki",
+                    "type": "float"
+                },
+                {
+                    "name": "deadband",
+                    "type": "float"
+                }
+            ]
+        },
+        "set_pid_iq": {
+            "code": 29,
+            "args": [
+                {
+                    "name": "kp",
+                    "type": "float"
+                },
+                {
+                    "name": "ki",
+                    "type": "float"
+                },
+                {
+                    "name": "deadband",
+                    "type": "float"
+                }
+            ],
+            "response": [{"name": "err_code", "type": "uint8"}]
+        },
+        "get_pid_iq": {
+            "code": 30,
+            "args": [],
+            "response": [
+                {
+                    "name": "kp",
+                    "type": "float"
+                },
+                {
+                    "name": "ki",
+                    "type": "float"
+                },
+                {
+                    "name": "deadband",
+                    "type": "float"
+                }
+            ]
+        },
+        "set_pid_speed": {
+            "code": 31,
+            "args": [
+                {
+                    "name": "kp",
+                    "type": "float"
+                },
+                {
+                    "name": "ki",
+                    "type": "float"
+                },
+                {
+                    "name": "out_max",
+                    "type": "float"
+                },
+                {
+                    "name": "deadband",
+                    "type": "float"
+                }
+            ],
+            "response": [{"name": "err_code", "type": "uint8"}]
+        },
+        "get_pid_speed": {
+            "code": 32,
+            "args": [],
+            "response": [
+                {
+                    "name": "kp",
+                    "type": "float"
+                },
+                {
+                    "name": "ki",
+                    "type": "float"
+                },
+                {
+                    "name": "out_max",
+                    "type": "float"
+                },
+                {
+                    "name": "deadband",
+                    "type": "float"
+                }
+            ]
+        },
+        "set_pid_position": {
+            "code": 33,
+            "args": [
+                {
+                    "name": "kp",
+                    "type": "float"
+                },
+                {
+                    "name": "ki",
+                    "type": "float"
+                },
+                {
+                    "name": "kd",
+                    "type": "float"
+                },
+                {
+                    "name": "out_max",
+                    "type": "float"
+                },
+                {
+                    "name": "deadband",
+                    "type": "float"
+                },
+                {
+                    "name": "d_fc",
+                    "type": "float"
+                }
+            ],
+            "response": [{"name": "err_code", "type": "uint8"}]
+        },
+        "get_pid_position": {
+            "code": 34,
+            "args": [],
+            "response": [
+                {
+                    "name": "kp",
+                    "type": "float"
+                },
+                {
+                    "name": "ki",
+                    "type": "float"
+                },
+                {
+                    "name": "kd",
+                    "type": "float"
+                },
+                {
+                    "name": "out_max",
+                    "type": "float"
+                },
+                {
+                    "name": "deadband",
+                    "type": "float"
+                },
+                {
+                    "name": "d_fc",
+                    "type": "float"
+                }
+            ]
+        },
+        "set_field_weakening": {
+            "code": 35,
+            "args": [
+                {
+                    "name": "kp",
+                    "type": "float"
+                },
+                {
+                    "name": "ki",
+                    "type": "float"
+                },
+                {
+                    "name": "out_min",
+                    "type": "float"
+                }
+            ],
+            "response": [{"name": "err_code", "type": "uint8"}]
+        },
+        "get_field_weakening": {
+            "code": 36,
+            "args": [],
+            "response": [
+                {
+                    "name": "kp",
+                    "type": "float"
+                },
+                {
+                    "name": "ki",
+                    "type": "float"
+                },
+                {
+                    "name": "out_min",
+                    "type": "float"
+                }
+            ]
+        },
+        "set_field_weakening_enable": {
+            "code": 37,
+            "args": [
+                {
+                    "name": "enable",
+                    "type": "uint8"
+                }
+            ],
+            "response": [{"name": "err_code", "type": "uint8"}]
+        },
+        "get_field_weakening_enable": {
+            "code": 38,
+            "args": [],
+            "response": [
+                {
+                    "name": "enable",
+                    "type": "uint8"
+                }
+            ]
+        },
+        "set_mtpa_enable": {
+            "code": 39,
+            "args": [
+                {
+                    "name": "enable",
+                    "type": "uint8"
+                }
+            ],
+            "response": [{"name": "err_code", "type": "uint8"}]
+        },
+        "get_mtpa_enable": {
+            "code": 40,
+            "args": [],
+            "response": [
+                {
+                    "name": "enable",
+                    "type": "uint8"
+                }
+            ]
+        },
+        "set_svpwm": {
+            "code": 41,
+            "args": [
+                {
+                    "name": "vd",
+                    "type": "float"
+                },
+                {
+                    "name": "vq",
+                    "type": "float"
+                },
+                {
+                    "name": "e_rad",
+                    "type": "float"
+                }
+            ],
+            "response": [{"name": "err_code", "type": "uint8"}]
+        },
+        "get_svpwm": {
+            "code": 42,
+            "args": [],
+            "response": [
+                {
+                    "name": "vd",
+                    "type": "float"
+                },
+                {
+                    "name": "vq",
+                    "type": "float"
+                },
+                {
+                    "name": "e_rad",
+                    "type": "float"
+                }
+            ]
+        },
+        "set_foc_current_set_point": {
+            "code": 43,
+            "args": [
+                {
+                    "name": "value",
+                    "type": "float"
+                }
+            ],
+            "response": [{"name": "err_code", "type": "uint8"}]
+        },
+        "get_foc_current_set_point": {
+            "code": 44,
+            "args": [],
+            "response": [
+                {
+                    "name": "value",
+                    "type": "float"
+                }
+            ]
+        },
+        "set_foc_speed_set_point": {
+            "code": 45,
+            "args": [
+                {
+                    "name": "value",
+                    "type": "float"
+                }
+            ],
+            "response": [{"name": "err_code", "type": "uint8"}]
+        },
+        "get_foc_speed_set_point": {
+            "code": 46,
+            "args": [],
+            "response": [
+                {
+                    "name": "value",
+                    "type": "float"
+                }
+            ]
+        },
+        "set_foc_position_set_point": {
+            "code": 47,
+            "args": [
+                {
+                    "name": "value",
+                    "type": "float"
+                }
+            ],
+            "response": [{"name": "err_code", "type": "uint8"}]
+        },
+        "get_foc_position_set_point": {
+            "code": 48,
+            "args": [],
+            "response": [
+                {
+                    "name": "value",
+                    "type": "float"
+                }
+            ]
+        },
+        "start_measure_motor_Rs": {
+            "code": 49,
+            "args": [],
+            "response": [{"name": "err_code", "type": "uint8"}]
+        },
+        "start_measure_motor_Ld": {
+            "code": 50,
+            "args": [],
+            "response": [{"name": "err_code", "type": "uint8"}]
+        },
+        "start_measure_motor_Lq": {
+            "code": 51,
+            "args": [],
+            "response": [{"name": "err_code", "type": "uint8"}]
+        },
+        "start_calibrate_abs_encoder": {
+            "code": 52,
+            "args": [],
+            "response": [{"name": "err_code", "type": "uint8"}]
+        },
+        "get_foc_actual_e_rad": {
+            "code": 53,
+            "args": [],
+            "response": [
+                {
+                    "name": "value",
+                    "type": "float"
+                }
+            ]
+        },
+        "get_abs_encoder_error_comp": {
+            "code": 54,
+            "args": [
+                {
+                    "name": "idx",
+                    "type": "uint16"
+                }
+            ],
+            "response": [{"name": "error_comp", "type": "float"}]
+        }
+    },
+    "plotter_dict": {
+        "ia": 40960,
+        "ib": 40961,
+        "ic": 40962,
+        "i_alpha": 40963,
+        "i_beta": 40964,
+        "id": 40965,
+        "iq": 40966,
+        "va": 40967,
+        "vb": 40968,
+        "vc": 40969,
+        "v_alpha": 40970,
+        "v_beta": 40971,
+        "vd": 40972,
+        "vq": 40973,
+        "e_rad": 40974,
+        "actual_rpm": 40975,
+        "actual_angle": 40976,
+        "Is_ref": 40977,
+        "rpm_ref": 40978,
+        "pos_ref": 40979,
+        "m_angle_rad": 40980,
+        "m_angle_rad_comp": 40981,
+        "v_bus": 40982
+    }
+}
