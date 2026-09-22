@@ -129,7 +129,7 @@ class SerialPortDialog(QtWidgets.QDialog):
 
 
 class DataAcquisitionThread(QtCore.QThread):
-    data_received = QtCore.pyqtSignal(list)
+    data_received = QtCore.pyqtSignal(int, float)
     connection_lost = QtCore.pyqtSignal()
 
     def __init__(self, serial_conn=None, parent=None):
@@ -139,7 +139,6 @@ class DataAcquisitionThread(QtCore.QThread):
         self.data_queue = queue.Queue(maxsize=10000)
         self.raw_buffer = bytearray()
         self.response_queue = queue.Queue()
-        self.expected_response_size = None
         self.error_count = 0
         self.max_errors = 10
 
@@ -167,44 +166,31 @@ class DataAcquisitionThread(QtCore.QThread):
                 print(f"Error di thread akuisisi: {e}")
                 QtCore.QThread.msleep(10)
 
-    def expect_response(self, size):
-        self.expected_response_size = size
-
     def parse_buffer(self):
         while True:
             if len(self.raw_buffer) < 3:
                 break
 
-            header = struct.unpack("<H", self.raw_buffer[:2])[0]
-
-            if header == 0xABCD:
-                num_channel = self.raw_buffer[2]
-                frame_size = 3 + num_channel * 4
+            if self.raw_buffer[:2] == b"\xA5\xA5":
+                payload_length = self.raw_buffer[2]
+                frame_size = 3 + payload_length
                 if len(self.raw_buffer) < frame_size:
                     break
 
-                values = []
-                offset = 3
-                for _ in range(num_channel):
-                    value = struct.unpack("<f", self.raw_buffer[offset : offset + 4])[0]
-                    values.append(value)
-                    offset += 4
-
-                self.data_received.emit(values)
+                payload = bytes(self.raw_buffer[3:frame_size])
                 self.raw_buffer = self.raw_buffer[frame_size:]
 
-            elif header == 0xA55A:
-                if self.expected_response_size is None:
-                    break
+                if len(payload) < 2:
+                    continue
 
-                frame_size = 2 + self.expected_response_size
-                if len(self.raw_buffer) < frame_size:
-                    break
-
-                payload = bytes(self.raw_buffer[2:frame_size])
-                self.response_queue.put(payload)
-                self.raw_buffer = self.raw_buffer[frame_size:]
-                self.expected_response_size = None
+                com_type, address = payload[:2]
+                data = payload[2:]
+                if com_type == 0x00:
+                    self.response_queue.put((address, data))
+                elif com_type == 0x05 and len(data) == 4:
+                    self.data_received.emit(address, struct.unpack("<f", data)[0])
+                elif com_type == 0x06:
+                    self.response_queue.put((address, data))
 
             else:
                 self.raw_buffer.pop(0)
@@ -281,7 +267,6 @@ class LivePlotter(QtWidgets.QMainWindow):
         self._syncing_plot_checks = False
 
         self.time_buffer = deque(maxlen=max_points)
-        self.data_buffers = []
         self.counter = 0
         self.channels = {}
         self.used_colors = set()
@@ -1167,6 +1152,7 @@ class LivePlotter(QtWidgets.QMainWindow):
             self.acq_thread.start()
 
             self.motor = MotorProtocol(self.serial_conn, self.acq_thread)
+            self.motor.reset_plotter_streams()
             self.plotter_dict = self.motor.plotter_dict
             self.console_namespace["thread"] = self.acq_thread
             self.console_namespace["motor"] = self.motor
@@ -1521,6 +1507,11 @@ class LivePlotter(QtWidgets.QMainWindow):
             return
         self._syncing_plot_checks = True
         active = set(self.motor.plotter_channels if self.motor else [])
+        for name in list(self.channels):
+            if name not in active:
+                channel = self.channels.pop(name)
+                self.plot_widget.removeItem(channel["line"])
+                self.release_color(channel["color"])
         for name, check in self.channel_checks.items():
             check.setChecked(name in active)
         self._syncing_plot_checks = False
@@ -1534,16 +1525,21 @@ class LivePlotter(QtWidgets.QMainWindow):
 
         names = [name for name in PLOT_PRESETS[preset_name] if name in self.plotter_dict]
         self.remove_all_plot_channels()
+        failed_channels = []
         for name in names:
             try:
                 self.echo_command(f"motor.plotter_add_line({name!r})")
                 motor.plotter_add_line(name)
             except Exception:
+                failed_channels.append(name)
                 self.log(traceback.format_exc())
         self.sync_channel_checks()
         for name, button in self.preset_buttons.items():
             button.setChecked(name == preset_name)
-        self.log(f"Applied plot preset: {preset_name}")
+        if failed_channels:
+            self.log(f"Plot preset {preset_name} incomplete; failed channels: {', '.join(failed_channels)}")
+        else:
+            self.log(f"Applied plot preset: {preset_name}")
 
     def remove_all_plot_channels(self):
         motor = self.require_motor()
@@ -1575,44 +1571,34 @@ class LivePlotter(QtWidgets.QMainWindow):
         if color in self.used_colors:
             self.used_colors.remove(color)
 
-    def on_data_received(self, values):
+    def on_data_received(self, address, value):
         if self.paused or not self.is_connected:
+            return
+
+        sample_name = self.motor.channel_name(address)
+        if sample_name is None or sample_name not in self.motor.plotter_channels:
             return
 
         self.counter += 1
         self.time_buffer.append(self.counter)
 
-        for name in list(self.channels.keys()):
-            if name not in self.motor.plotter_channels:
-                ch = self.channels.pop(name)
-                ch["line"].clear()
-                self.plot_widget.removeItem(ch["line"])
-                if "color" in ch:
-                    self.release_color(ch["color"])
-                if name in self.data_buffers:
-                    self.data_buffers.remove(name)
+        if sample_name not in self.channels:
+            color = self.get_next_color()
+            pen = pg.mkPen(color=color, width=1.5)
+            line = self.plot_widget.plot([], [], pen=pen, name=sample_name)
+            self.channels[sample_name] = {
+                "line": line,
+                "buffer": deque(maxlen=self.max_points),
+                "time": deque(maxlen=self.max_points),
+                "color": color,
+            }
 
-        for name in self.motor.plotter_channels:
-            if name not in self.channels:
-                buffer = deque([np.nan] * (len(self.time_buffer) - 1), maxlen=self.max_points)
-                self.data_buffers.append(buffer)
+        # Stream frames contain one channel, so only advance that channel's history.
+        channel = self.channels[sample_name]
+        channel["buffer"].append(value)
+        channel["time"].append(self.counter)
 
-                color = self.get_next_color()
-                pen = pg.mkPen(color=color, width=1.5)
-                line = self.plot_widget.plot([], [], pen=pen, name=name)
-                self.channels[name] = {
-                    "line": line,
-                    "buffer": buffer,
-                    "color": color,
-                }
-
-        for idx, name in enumerate(self.motor.plotter_channels):
-            if idx < len(values):
-                self.channels[name]["buffer"].append(values[idx])
-            else:
-                self.channels[name]["buffer"].append(np.nan)
-
-        self.status_label.setText(f"Received {len(values)} values")
+        self.status_label.setText(f"Received {sample_name}")
         self.sync_channel_checks()
         self.update_realtime_values()
 
@@ -1620,11 +1606,11 @@ class LivePlotter(QtWidgets.QMainWindow):
         if self.paused or not self.is_connected or self.motor is None:
             return
 
-        x = np.asarray(self.time_buffer)
         for name in self.motor.plotter_channels:
             if name not in self.channels:
                 continue
             ch = self.channels[name]
+            x = np.asarray(ch["time"])
             y = np.asarray(ch["buffer"])
             n = min(len(x), len(y))
             if n == 0:
@@ -1673,6 +1659,7 @@ class LivePlotter(QtWidgets.QMainWindow):
     def clear_data(self):
         for name in self.channels:
             self.channels[name]["buffer"].clear()
+            self.channels[name]["time"].clear()
         self.time_buffer.clear()
         self.counter = 0
 

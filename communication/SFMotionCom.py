@@ -4,6 +4,7 @@ import time
 import json
 import numpy as np
 from enum import IntEnum
+from pathlib import Path
 
 
 class SFMComType(IntEnum):
@@ -19,10 +20,12 @@ class SFMComType(IntEnum):
 class SFMotion:
     HEADER = b"\xA5\xA5"
 
-    def __init__(self, serial_conn=None, acq_thread=None, json_path="SFMotionRegisters.json"):
+    def __init__(self, serial_conn=None, acq_thread=None, json_path=None):
         self.ser = serial_conn
         self.acq_thread = acq_thread
 
+        if json_path is None:
+            json_path = Path(__file__).with_name("SFMotionRegisters.json")
         with open(json_path, "r") as f:
             config = json.load(f)
 

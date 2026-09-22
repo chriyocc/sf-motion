@@ -90,7 +90,10 @@ int8_t sfm_com_handle_parameter(
             break;
           }
         }
-        if (!already_enabled && com->plotter_line < MAX_PLOTTER_LINE) {
+        if (already_enabled) {
+          ret_val = 0;
+        }
+        else if (com->plotter_line < MAX_PLOTTER_LINE) {
           com->plotter[com->plotter_line].addr = addr;
           com->plotter_line++;
           ret_val = 0;
