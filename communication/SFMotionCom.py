@@ -64,6 +64,10 @@ class SFMotion:
     def close(self):
         self.ser.close()
 
+    def set_foc_motor_mode(self, mode):
+        """Keep the legacy console command compatible with the motor_mode register."""
+        return self.set_motor_mode(mode)
+
     # ------------------------------------------------------------
     # Low-level communication
     # ------------------------------------------------------------

@@ -16,6 +16,12 @@ from SFMotionCom import SFMotion
 import queue
 import colorsys
 
+class DisconnectedMotor:
+    """Explain how to restore console access before a connection exists."""
+
+    def __getattr__(self, name):
+        raise ConnectionError("Motor is not connected. Click Connect and select the motor's serial port.")
+
 class SerialPortDialog(QtWidgets.QDialog):
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -377,6 +383,7 @@ class LivePlotter(QtWidgets.QMainWindow):
         self.max_points = max_points
         self.serial_conn = None
         self.acq_thread = None
+        self.motor = None
         self.is_connected = False
         
         # Setup UI
@@ -408,7 +415,7 @@ class LivePlotter(QtWidgets.QMainWindow):
         self.console_namespace = {
             "plotter": self,
             "thread": self.acq_thread,
-            "motor": self.motor if hasattr(self, 'motor') else None,
+            "motor": DisconnectedMotor(),
             "np": np,
             "pg": pg
 
@@ -599,6 +606,8 @@ class LivePlotter(QtWidgets.QMainWindow):
             out = buffer.getvalue()
             if out:
                 self.console_output.appendPlainText(out)
+        except ConnectionError as exc:
+            self.console_output.appendPlainText(str(exc))
         except Exception:
             self.console_output.appendPlainText(
                 traceback.format_exc()
@@ -665,7 +674,9 @@ class LivePlotter(QtWidgets.QMainWindow):
                 self.enable_streaming(self.motor.channel.m_angle_rad_comp)
 
             
-        except serial.SerialException as e:
+        except Exception as e:
+            self.disconnect_serial()
+            self.console_output.appendPlainText(f"Failed to connect to {port}: {e}")
             QtWidgets.QMessageBox.critical(
                 self,
                 "Connection Error",
@@ -681,7 +692,8 @@ class LivePlotter(QtWidgets.QMainWindow):
         
         if self.serial_conn and self.serial_conn.is_open:
             self.serial_conn.close()
-            self.serial_conn = None
+        self.serial_conn = None
+        self.motor = None
         
         self.is_connected = False
         self.connect_action.setEnabled(True)
@@ -690,7 +702,7 @@ class LivePlotter(QtWidgets.QMainWindow):
         
         # Update console namespace
         self.console_namespace["thread"] = None
-        self.console_namespace["motor"] = None
+        self.console_namespace["motor"] = DisconnectedMotor()
         self.setup_console_completion()
         
         print("Disconnected from serial port")
