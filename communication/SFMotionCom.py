@@ -1,4 +1,7 @@
 import struct
+import math
+import queue
+import threading
 import serial
 import time
 import json
@@ -21,6 +24,8 @@ class SFMotion:
     HEADER = b"\xA5\xA5"
 
     def __init__(self, serial_conn=None, acq_thread=None, json_path=None):
+        self._request_lock = threading.Lock()
+        self._desynchronized = False
         self.ser = serial_conn
         self.acq_thread = acq_thread
 
@@ -69,69 +74,74 @@ class SFMotion:
         # print(f"TX: {frame.hex(' ')}")
         self.ser.write(frame)
 
+    def validate_write(self, address, value):
+        register = self.registers.get(address)
+        if register is None or not register["write"]:
+            raise ValueError(f"Address {address} is not writable")
+        name = register["name"]
+        if name.startswith(("id_", "iq_", "speed_", "position_", "fw_")) and name.endswith(
+            ("_kp", "_ki", "_kd", "_deadband", "_out_max", "_out_min", "_d_filter_fc")
+        ):
+            valid = math.isfinite(value)
+            if name.endswith("_out_min"):
+                valid = valid and value <= 0
+            elif name.endswith("_d_filter_fc"):
+                valid = valid and value > 0
+            else:
+                valid = valid and value >= 0
+            if not valid:
+                raise ValueError(f"Invalid PID value for {name}: {value}")
+        if register["format"] is not None:
+            struct.pack(register["format"], value)
+
+    def _exchange(self, com_type, address, data=b"", expected_size=1):
+        # Only one outstanding request: the wire protocol has no transaction ID.
+        with self._request_lock:
+            disable = (com_type == SFMComType.WRITE and
+                       self.registers[address]["name"] == "motor_mode" and data == b"\x06")
+            if self._desynchronized:
+                if disable:
+                    self._send_frame(com_type, address, data)
+                    raise RuntimeError("Disable sent but unconfirmed; reconnect before further requests")
+                raise RuntimeError("Communication is unsynchronized; reconnect before further requests")
+            try:
+                self._send_frame(com_type, address, data)
+                response_address, response = self.acq_thread.response_queue.get(timeout=2)
+                if response_address != address or len(response) != expected_size:
+                    raise RuntimeError("Unexpected response; reconnect before further requests")
+            except Exception as exc:
+                self._desynchronized = True
+                if isinstance(exc, queue.Empty):
+                    raise TimeoutError("Response timed out; reconnect before further requests") from exc
+                raise
+            return response
+
     def read(self, address):
         register = self.registers.get(address)
-        if register is None:
-            raise ValueError(f"Unknown register address: {address}")
-        if not register["read"]:
-            raise ValueError(f"Address {address} ({register['name']}) is not readable")
+        if register is None or not register["read"] or register["format"] is None:
+            raise ValueError(f"Address {address} is not readable")
         fmt = register["format"]
-        if fmt is None:
-            raise ValueError(f"Address {address} ({register['name']}) has no data format")
-        size = struct.calcsize(fmt)
-        self._send_frame(SFMComType.READ, address)
-        response_address, data = (self.acq_thread.response_queue.get(timeout=2))
-        if response_address != address:
-            raise RuntimeError(f"Unexpected address: {response_address}")
-        if len(data) != size:
-            raise RuntimeError(f"Expected {size} bytes, received {len(data)}")
+        data = self._exchange(SFMComType.READ, address, expected_size=struct.calcsize(fmt))
         return struct.unpack(fmt, data)[0]
 
     def write(self, address, value=None):
-        register = self.registers.get(address)
-        if register is None:
-            raise ValueError(f"Unknown register address: {address}")
-        if not register["write"]:
-            raise ValueError(f"Address {address} ({register['name']}) is not writable")
-        fmt = register["format"]
-        if fmt is None:
-            data = b""
-        else:
-            data = struct.pack(fmt, value)
-        self._send_frame(SFMComType.WRITE, address, data,)
-        response_address, response_data = (
-            self.acq_thread.response_queue.get(timeout=2)
-        )
-        if response_address != address:
-            raise RuntimeError(f"Unexpected address: {response_address}")
-        if len(response_data) != 1:
-            raise RuntimeError(f"Invalid response length: {len(response_data)}")
-        status = struct.unpack("<b", response_data)[0]
-        if status != 0:
-            raise RuntimeError(f"Device returned error: {status}")
+        self.validate_write(address, value)
+        fmt = self.registers[address]["format"]
+        data = b"" if fmt is None else struct.pack(fmt, value)
+        self._check_status(self._exchange(SFMComType.WRITE, address, data))
         return True
 
-    # ------------------------------------------------------------
-    # Streaming
-    # ------------------------------------------------------------
+    @staticmethod
+    def _check_status(response):
+        status = struct.unpack("<b", response)[0]
+        if status != 0:
+            raise RuntimeError(f"Device returned error: {status}")
 
     def enable_streaming(self, address):
-        self._send_frame(SFMComType.ENABLE_STREAMING, address,)
-        response_address, response_data = self.acq_thread.response_queue.get(timeout=2)
-        if response_address != address:
-            raise RuntimeError(f"Unexpected address: {response_address}")
-        status = struct.unpack("<b", response_data)[0]
-        if status != 0:
-            raise RuntimeError(f"Device returned error: {status}")
+        self._check_status(self._exchange(SFMComType.ENABLE_STREAMING, address))
 
     def disable_streaming(self, address):
-        self._send_frame(SFMComType.DISABLE_STREAMING, address,)
-        response_address, response_data = self.acq_thread.response_queue.get(timeout=2)
-        if response_address != address:
-            raise RuntimeError(f"Unexpected address: {response_address}")
-        status = struct.unpack("<b", response_data)[0]
-        if status != 0:
-            raise RuntimeError(f"Device returned error: {status}")
+        self._check_status(self._exchange(SFMComType.DISABLE_STREAMING, address))
 
     # ----------------------------------------------------------------------------------
 

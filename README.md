@@ -202,3 +202,54 @@ you can become a sponsor:
 
 Your support helps fund hardware development, testing, documentation,
 and future improvements to SF-Motion.
+
+## Update Needed
+- Implement overcurrent protection (send fault through CAN)
+- 
+
+
+## Updates compared with the earlier version (2026-09-23)
+
+This section records the firmware, custom GUI, and communication fixes made after the PID/control review. The comparison is against the code before those fixes, rather than a tagged release.
+
+### Firmware changes
+
+| Area | Earlier behavior | Updated behavior |
+| --- | --- | --- |
+| Saved position PID cutoff | Startup replaced the saved derivative filter cutoff with 20 Hz. | Startup preserves the saved cutoff and recalculates its coefficient after setting the sampling period. |
+| PI/PID anti-windup | The integral could keep growing when the proportional term, or combined P+D term, already exceeded the output limit. | Integration stops when it would drive the output further into saturation, while allowing the integral to unwind. |
+| PID validation and acknowledgements | Negative gains could be ignored while returning success; negative output maxima could invert the bounds. | PID setters reject invalid values and return an error through the communication protocol. Validation includes non-finite values, ordered output bounds, nonnegative gains/deadbands, and positive filter cutoff and sampling period. |
+| PID reset | Reset cleared the integral and previous error but retained filtered derivative history. | Reset also clears the filtered derivative history. |
+| USB transmit buffer | A new frame could overwrite bytes still being used by an outstanding USB transfer. | CDC checks availability, then copies the frame into its own transmit buffer before starting the transfer. Oversized frames are rejected. |
+
+### Custom GUI and Python communication changes
+
+These control changes apply to `communication/plotter_custom.py`; the shared protocol changes are in `communication/SFMotionCom.py` and `communication/MotorProtocol.py`.
+
+| Area | Earlier behavior | Updated behavior |
+| --- | --- | --- |
+| Disable command | A timeout while sending a zero current/speed setpoint could prevent the disable command from being sent. | The GUI attempts disable even when the preliminary zero fails. An unconfirmed disable is reported as unconfirmed. |
+| Relative position moves | Targets used the last plotted angle, which became stale when plotting was paused. | The GUI reads the angle directly from the board before calculating a relative target. A failed or non-finite read cancels the move. The position demo also reads its starting angle directly. |
+| Reconnect and Apply All | Previously loaded parameters remained eligible for Apply All after reconnecting. | Reconnect, disconnect, a failed Read All, or a failed Apply All invalidates the loaded-parameter state. A successful Read All is required before Apply All is allowed again. |
+| PID input fields | PID fields allowed negative values regardless of their meaning. | Gains, deadbands, and output maxima are nonnegative; derivative cutoff is positive; field-weakening output minimum is nonpositive. The protocol validates all values in a PID group before its first write. |
+| Request/reply handling | Requests consumed the next queued reply, allowing delayed replies to disrupt later requests. | Requests are serialized. A timeout, transport failure, or malformed/mismatched reply invalidates the session and requires reconnecting. A disable write remains possible, but is explicitly unconfirmed in that state. |
+| Partial parameter updates | Failure during a group write could leave some registers updated without a clear recovery instruction. | Failures explicitly report a possible partial update and instruct the user to reconnect if required, then read parameters before retrying. |
+| Connection setup failures | Only serial-specific exceptions were caught during connection setup. | Setup failures also clean up the connection and report the error. |
+
+### Applying the update
+
+- **Firmware changes require a successful flash and verification.** Building alone does not update the board.
+- Build the main firmware with `pio run -e genericSTM32F405RG`. The output is `.pio/build/genericSTM32F405RG/firmware.bin`.
+- **GUI changes require restarting the Python GUI.** After connecting, use Read All Parameters before Apply All.
+- PID register mappings and the on-wire frame format remain unchanged.
+
+### Validation and remaining limitations
+
+- The main firmware build passed.
+- All 16 Python GUI/protocol tests passed, including the two existing plotting tests and 14 new regression tests. Serial interactions in these tests are mocked.
+- Added C regression tests for PI/PID saturation and unwinding, invalid values, filter initialization, and reset behavior. They were compiled with the ARM toolchain but have not been executed here.
+- PID groups still use separate register writes; they are **not atomic**. A connection failure can leave a partial update, and automatic rollback is not attempted.
+- Motor behavior and USB transfer behavior have not been verified on hardware. The reported CubeProgrammer erase failure remains unresolved; the updated firmware has not been confirmed installed on the board.
+- The VCAP capacitor values discussed during troubleshooting are a hardware check, not a hardware modification included in this update.
+
+See [hardware-free test instructions and communication recovery](tests/README.md) for details.

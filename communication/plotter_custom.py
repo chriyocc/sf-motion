@@ -1,6 +1,7 @@
 import contextlib
 import io
 import json
+import math
 import struct
 import sys
 import time
@@ -989,6 +990,11 @@ class LivePlotter(QtWidgets.QMainWindow):
                 widget = QtWidgets.QDoubleSpinBox()
                 widget.setRange(-1000000000.0, 1000000000.0)
                 widget.setDecimals(8)
+                if key.startswith(("pid_", "field_weakening.")):
+                    if key.endswith(".out_min"):
+                        widget.setMaximum(0.0)
+                    else:
+                        widget.setMinimum(0.00000001 if key.endswith(".d_fc") else 0.0)
                 widget.setSingleStep(0.01)
                 widget.setKeyboardTracking(False)
             layout.addWidget(widget, idx, 1)
@@ -1139,6 +1145,7 @@ class LivePlotter(QtWidgets.QMainWindow):
                 self.connect_serial(port, baudrate)
 
     def connect_serial(self, port, baudrate):
+        self.parameters_loaded = False
         try:
             if self.is_connected:
                 self.disconnect_serial()
@@ -1168,7 +1175,9 @@ class LivePlotter(QtWidgets.QMainWindow):
             self.update_connection_ui()
             self.log("Serial connection established successfully")
 
-        except serial.SerialException as e:
+        except Exception as e:
+            self.is_connected = False
+            self.disconnect_serial()
             QtWidgets.QMessageBox.critical(
                 self,
                 "Connection Error",
@@ -1179,6 +1188,7 @@ class LivePlotter(QtWidgets.QMainWindow):
             self.update_connection_ui()
 
     def disconnect_serial(self):
+        self.parameters_loaded = False
         if self.is_connected:
             self.try_disable_motor(reason="disconnect")
 
@@ -1233,17 +1243,15 @@ class LivePlotter(QtWidgets.QMainWindow):
     def try_disable_motor(self, reason="manual"):
         if not self.motor or not self.serial_conn or not self.serial_conn.is_open:
             return False
+        # A failed preliminary zero must never prevent the disable attempt.
         try:
             if self.current_motor_mode == 0:
-                self.echo_command("motor.set_foc_current_set_point(0.0)")
                 self.motor.set_foc_current_set_point(0.0)
-                QtWidgets.QApplication.processEvents()
-                time.sleep(0.05)
             elif self.current_motor_mode == 1:
-                self.echo_command("motor.set_foc_speed_set_point(0.0)")
                 self.motor.set_foc_speed_set_point(0.0)
-                QtWidgets.QApplication.processEvents()
-                time.sleep(0.05)
+        except Exception as exc:
+            self.log(f"Zero setpoint failed; attempting disable anyway: {exc}")
+        try:
             self.echo_command("motor.set_foc_motor_mode(6)")
             result = self.motor.set_foc_motor_mode(6)
             self.current_motor_mode = 6
@@ -1259,7 +1267,7 @@ class LivePlotter(QtWidgets.QMainWindow):
             self.mode_buttons[6].setChecked(True)
             self.on_control_mode_changed(6)
         else:
-            self.log("Disable motor command was not sent")
+            self.log("Motor disable was not confirmed")
 
     def save_config(self):
         self.safe_motor_call("save_config")
@@ -1375,6 +1383,11 @@ class LivePlotter(QtWidgets.QMainWindow):
                 self.disable_motor()
                 return
 
+            if mode == 2:
+                current = motor.get_actual_angle()
+                if not math.isfinite(current):
+                    raise ValueError("Invalid position feedback; relative move cancelled")
+
             if self.current_motor_mode != mode:
                 self.echo_command(f"motor.set_foc_motor_mode({mode})")
                 result = motor.set_foc_motor_mode(mode)
@@ -1388,16 +1401,8 @@ class LivePlotter(QtWidgets.QMainWindow):
                 self.echo_command(f"motor.set_foc_speed_set_point({value!r})")
                 result = motor.set_foc_speed_set_point(value)
             elif mode == 2:
-                current = self.latest_channel_value("actual_angle")
-                if current is None:
-                    self.log(
-                        "No actual_angle samples available. "
-                        "Add the Position preset and wait for data before applying a relative move."
-                    )
-                    self.apply_plot_preset("Position")
-                    return
                 target = current + value
-                self.echo_command("current = plotter.channels['actual_angle']['buffer'][-1]")
+                self.echo_command(f"current = {current!r}  # fresh board feedback")
                 self.echo_command(f"motor.set_foc_position_set_point(current + {value!r})")
                 result = motor.set_foc_position_set_point(target)
             else:
@@ -1426,12 +1431,6 @@ class LivePlotter(QtWidgets.QMainWindow):
     def move_relative_position(self):
         motor = self.require_motor()
         if motor is None:
-            return
-
-        angle = self.latest_channel_value("actual_angle")
-        if angle is None:
-            self.log("No actual_angle samples available. Add the Position preset and wait for data.")
-            self.apply_plot_preset("Position")
             return
 
         delta = self.relative_position_spin.value()
@@ -1727,6 +1726,7 @@ class LivePlotter(QtWidgets.QMainWindow):
             self.log(text)
 
     def read_all_parameters(self):
+        self.parameters_loaded = False
         motor = self.require_motor()
         if motor is None:
             return
@@ -1885,9 +1885,12 @@ class LivePlotter(QtWidgets.QMainWindow):
             motor.set_mtpa_enable(self.parameter_value("mtpa_enable"))
             self.log("Applied all parameters")
         except Exception:
+            self.parameters_loaded = False
+            self.log("Parameters may be partially applied; read all parameters before retrying")
             self.log(traceback.format_exc())
 
     def apply_original_pid_values(self):
+        self.parameters_loaded = False
         motor = self.require_motor()
         if motor is None:
             return
@@ -2011,9 +2014,15 @@ class LivePlotter(QtWidgets.QMainWindow):
         self.run_motor_sequence(1, sequence)
 
     def run_motor_position_demo(self):
-        home = self.latest_channel_value("actual_angle")
-        if home is None:
-            self.log("No actual_angle samples available for position demo")
+        motor = self.require_motor()
+        if motor is None:
+            return
+        try:
+            home = motor.get_actual_angle()
+            if not math.isfinite(home):
+                raise ValueError("Invalid position feedback")
+        except Exception as exc:
+            self.log(f"Position demo cancelled: {exc}")
             return
         sequence = [
             (home, 1),

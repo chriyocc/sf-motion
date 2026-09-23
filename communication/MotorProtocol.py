@@ -55,9 +55,21 @@ class MotorProtocol:
         return {key: self._get_value(register) for key, register in names.items()}
 
     def _set_group(self, names, values):
+        addresses = {r["name"]: addr for addr, r in self.protocol.registers.items()}
         for key, register in names.items():
-            self._set_value(register, values[key])
+            self.protocol.validate_write(addresses[register], values[key])
+        try:
+            for key, register in names.items():
+                self._set_value(register, values[key])
+        except Exception as exc:
+            raise RuntimeError(
+                "Parameter group may be partially applied. Reconnect if required, "
+                "then read all parameters before retrying."
+            ) from exc
         return True
+
+    def get_actual_angle(self):
+        return self._get_value("actual_angle")
 
     def get_foc_mode(self):
         return {"mode": self._get_value("foc_mode")}

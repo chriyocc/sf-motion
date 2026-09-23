@@ -249,6 +249,127 @@ class MotorSequenceThread(QtCore.QThread):
     def stop(self):
         self.running = False
 
+
+class PlotGraphWindow(QtWidgets.QMainWindow):
+    closed = QtCore.pyqtSignal(object)
+
+    def __init__(self, title, max_points=1000, parent=None):
+        super().__init__(parent)
+        self.max_points = max_points
+        self.channels = {}
+        self.paused = False
+
+        self.setWindowTitle(title)
+        self.resize(900, 560)
+
+        central_widget = QtWidgets.QWidget()
+        self.setCentralWidget(central_widget)
+        layout = QtWidgets.QVBoxLayout(central_widget)
+
+        self.plot_widget = pg.PlotWidget()
+        self.plot_widget.setBackground('w')
+        self.plot_widget.setLabel('left', 'Value')
+        self.plot_widget.setLabel('bottom', 'Sample')
+        self.plot_widget.showGrid(x=True, y=True, alpha=0.3)
+        self.legend = self.plot_widget.addLegend()
+        layout.addWidget(self.plot_widget)
+
+        control_layout = QtWidgets.QHBoxLayout()
+
+        self.clear_button = QtWidgets.QPushButton('Clear')
+        self.clear_button.clicked.connect(self.clear_data)
+        control_layout.addWidget(self.clear_button)
+
+        self.pause_button = QtWidgets.QPushButton('Pause')
+        self.pause_button.clicked.connect(self.toggle_pause)
+        control_layout.addWidget(self.pause_button)
+
+        self.auto_range_check = QtWidgets.QCheckBox('Auto Range')
+        self.auto_range_check.setChecked(True)
+        control_layout.addWidget(self.auto_range_check)
+
+        control_layout.addStretch()
+        self.info_label = QtWidgets.QLabel('Samples: 0')
+        control_layout.addWidget(self.info_label)
+        layout.addLayout(control_layout)
+
+    def append_sample(self, address, value, sample_index, name, color):
+        if self.paused:
+            return
+
+        if address not in self.channels:
+            buffer = deque(maxlen=self.max_points)
+            time_buffer = deque(maxlen=self.max_points)
+            line = self.plot_widget.plot([], [], pen=pg.mkPen(color=color, width=1.5))
+            self.legend.addItem(line, name)
+            self.channels[address] = {
+                "line": line,
+                "buffer": buffer,
+                "time": time_buffer,
+                "name": name,
+            }
+
+        ch = self.channels[address]
+        ch["buffer"].append(value)
+        ch["time"].append(sample_index)
+
+    def update_plot(self, latest_sample):
+        if self.paused:
+            return
+
+        for ch in self.channels.values():
+            x = np.asarray(ch["time"])
+            y = np.asarray(ch["buffer"])
+            if len(x) == 0:
+                continue
+            ch["line"].setData(x, y)
+
+        if latest_sample > 0:
+            self.plot_widget.setXRange(
+                max(0, latest_sample - self.max_points),
+                latest_sample,
+                padding=0.05
+            )
+
+        if self.auto_range_check.isChecked():
+            self.auto_range()
+
+        total_samples = sum(len(ch["buffer"]) for ch in self.channels.values())
+        self.info_label.setText(f"Samples: {total_samples}")
+
+    def auto_range(self):
+        all_values = []
+        for ch in self.channels.values():
+            all_values.extend(ch["buffer"])
+
+        if not all_values:
+            return
+
+        all_values = np.asarray(all_values, dtype=float)
+        all_values = all_values[~np.isnan(all_values)]
+        if all_values.size == 0:
+            return
+
+        y_min = np.min(all_values)
+        y_max = np.max(all_values)
+        padding = max(1, (y_max - y_min) * 0.1)
+        self.plot_widget.setYRange(y_min - padding, y_max + padding)
+
+    def clear_data(self):
+        for ch in self.channels.values():
+            ch["buffer"].clear()
+            ch["time"].clear()
+            ch["line"].setData([], [])
+
+    def toggle_pause(self):
+        self.paused = not self.paused
+        self.pause_button.setText('Resume' if self.paused else 'Pause')
+
+    def closeEvent(self, event):
+        self.closed.emit(self)
+        event.accept()
+
+
 class LivePlotter(QtWidgets.QMainWindow):
     def __init__(self, max_points=1000, port=None, baudrate=115200):
         super().__init__()
@@ -295,6 +416,8 @@ class LivePlotter(QtWidgets.QMainWindow):
         self.setup_console_completion()
 
         self.disabled_addresses = set()
+        self.plot_windows = []
+        self.plot_window_counter = 0
         self.channels = {}
         self.used_colors = set()
         self.available_colors = [
@@ -352,6 +475,13 @@ class LivePlotter(QtWidgets.QMainWindow):
         toolbar.addAction(self.disconnect_action)
         
         toolbar.addSeparator()
+
+        # Multiple external realtime plot windows
+        self.new_plot_window_action = QtWidgets.QAction('New Plot Window', self)
+        self.new_plot_window_action.triggered.connect(self.open_plot_window)
+        toolbar.addAction(self.new_plot_window_action)
+
+        toolbar.addSeparator()
         
         # Plot widget
         self.plot_widget = pg.PlotWidget()
@@ -400,6 +530,34 @@ class LivePlotter(QtWidgets.QMainWindow):
         self.console_input.setPlaceholderText(">>>")
         self.console_input.returnPressed.connect(self.execute_command)
         layout.addWidget(self.console_input)
+
+    def open_plot_window(self):
+        self.plot_window_counter += 1
+        window = PlotGraphWindow(
+            f"sf-Motion Plot {self.plot_window_counter}",
+            max_points=self.max_points,
+            parent=self
+        )
+        window.closed.connect(self.on_plot_window_closed)
+        self.plot_windows.append(window)
+        window.show()
+
+        # Seed the new graph with any data already visible in the main plot.
+        for address, ch in self.channels.items():
+            for sample_index, value in zip(ch["time"], ch["buffer"]):
+                window.append_sample(
+                    address,
+                    value,
+                    sample_index,
+                    ch["name"],
+                    ch["color"]
+                )
+
+        print(f"Opened {window.windowTitle()}")
+
+    def on_plot_window_closed(self, window):
+        if window in self.plot_windows:
+            self.plot_windows.remove(window)
 
     def setup_console_completion(self):
         words = self.build_completion()
@@ -610,8 +768,18 @@ class LivePlotter(QtWidgets.QMainWindow):
         ch = self.channels[address]
         ch["buffer"].append(value)
         ch["time"].append(self.counter)
+        sample_index = self.counter
         self.counter += 1
         self.status_label.setText(f"{ch['name']}: {value:.3f}")
+
+        for window in list(self.plot_windows):
+            window.append_sample(
+                address,
+                value,
+                sample_index,
+                ch["name"],
+                ch["color"]
+            )
     
     def update_plot(self):
         if self.paused or not self.is_connected:
@@ -650,34 +818,31 @@ class LivePlotter(QtWidgets.QMainWindow):
             f"Samples: {total_samples} | FPS: {self.fps_result}"
         )
 
+        for window in list(self.plot_windows):
+            window.update_plot(self.counter)
+
         self.fps_counter += 1
     
     def auto_range(self):
-        if len(self.time_buffer) > 0:
-            all_values = []
-            
-            for name in self.motor.plotter_channels:
-                if name in self.channels:
-                    buffer = self.channels[name]["buffer"]
-                    all_values.extend(buffer)
+        all_values = []
+        for ch in self.channels.values():
+            all_values.extend(ch["buffer"])
 
-            if not all_values:
-                return
-                
-            all_values = np.asarray(all_values, dtype=float)
-            all_values = all_values[~np.isnan(all_values)]
+        if not all_values:
+            return
 
-            if all_values.size == 0:
-                return
+        all_values = np.asarray(all_values, dtype=float)
+        all_values = all_values[~np.isnan(all_values)]
+        if all_values.size == 0:
+            return
 
-            y_min = np.min(all_values)
-            y_max = np.max(all_values)
-            
-            padding = max(1, (y_max - y_min) * 0.1)
-            self.plot_widget.setYRange(
-                y_min - padding,
-                y_max + padding
-            )
+        y_min = np.min(all_values)
+        y_max = np.max(all_values)
+        padding = max(1, (y_max - y_min) * 0.1)
+        self.plot_widget.setYRange(
+            y_min - padding,
+            y_max + padding
+        )
     
     def update_fps(self):
         self.fps_result = self.fps_counter
@@ -700,6 +865,8 @@ class LivePlotter(QtWidgets.QMainWindow):
     
     def closeEvent(self, event):
         print("Closing application...")
+        for window in list(self.plot_windows):
+            window.close()
         self.disconnect_serial()
         
         if hasattr(self, 'timer'):

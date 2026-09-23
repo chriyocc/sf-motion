@@ -6,6 +6,9 @@ static int8_t name(sfm_com_t *com, void *data) {  \
   return 0;                                       \
 }
 
+#define SFM_PID_SETTER(name, set) \
+static int8_t name(sfm_com_t *com, void *data) { return (set); }
+
 #define SFM_SETTER(name, set)                    \
 static int8_t name(sfm_com_t *com, void *data) { \
   set;                                           \
@@ -204,61 +207,61 @@ SFM_SETTER(set_flux_linkage, foc_set_motor_flux_linkage(com->pfoc, *(float *)dat
 /************************************************************************************************ */
 
 SFM_GETTER(get_id_kp, *(float *)data = pid_get_kp(&com->pfoc->id_ctrl))
-SFM_SETTER(set_id_kp, pid_set_kp(&com->pfoc->id_ctrl, *(float *)data))
+SFM_PID_SETTER(set_id_kp, pid_set_kp(&com->pfoc->id_ctrl, *(float *)data))
 
 SFM_GETTER(get_id_ki, *(float *)data = pid_get_ki(&com->pfoc->id_ctrl))
-SFM_SETTER(set_id_ki, pid_set_ki(&com->pfoc->id_ctrl, *(float *)data))
+SFM_PID_SETTER(set_id_ki, pid_set_ki(&com->pfoc->id_ctrl, *(float *)data))
 
 SFM_GETTER(get_id_deadband, *(float *)data = pid_get_deadband(&com->pfoc->id_ctrl))
-SFM_SETTER(set_id_deadband, pid_set_deadband(&com->pfoc->id_ctrl, *(float *)data))
+SFM_PID_SETTER(set_id_deadband, pid_set_deadband(&com->pfoc->id_ctrl, *(float *)data))
 
 SFM_GETTER(get_iq_kp, *(float *)data = pid_get_kp(&com->pfoc->iq_ctrl))
-SFM_SETTER(set_iq_kp, pid_set_kp(&com->pfoc->iq_ctrl, *(float *)data))
+SFM_PID_SETTER(set_iq_kp, pid_set_kp(&com->pfoc->iq_ctrl, *(float *)data))
 
 SFM_GETTER(get_iq_ki, *(float *)data = pid_get_ki(&com->pfoc->iq_ctrl))
-SFM_SETTER(set_iq_ki, pid_set_ki(&com->pfoc->iq_ctrl, *(float *)data))
+SFM_PID_SETTER(set_iq_ki, pid_set_ki(&com->pfoc->iq_ctrl, *(float *)data))
 
 SFM_GETTER(get_iq_deadband, *(float *)data = pid_get_deadband(&com->pfoc->iq_ctrl))
-SFM_SETTER(set_iq_deadband, pid_set_deadband(&com->pfoc->iq_ctrl, *(float *)data))
+SFM_PID_SETTER(set_iq_deadband, pid_set_deadband(&com->pfoc->iq_ctrl, *(float *)data))
 
 SFM_GETTER(get_speed_kp, *(float *)data = pid_get_kp(&com->pfoc->speed_ctrl))
-SFM_SETTER(set_speed_kp, pid_set_kp(&com->pfoc->speed_ctrl, *(float *)data))
+SFM_PID_SETTER(set_speed_kp, pid_set_kp(&com->pfoc->speed_ctrl, *(float *)data))
 
 SFM_GETTER(get_speed_ki, *(float *)data = pid_get_ki(&com->pfoc->speed_ctrl))
-SFM_SETTER(set_speed_ki, pid_set_ki(&com->pfoc->speed_ctrl, *(float *)data))
+SFM_PID_SETTER(set_speed_ki, pid_set_ki(&com->pfoc->speed_ctrl, *(float *)data))
 
 SFM_GETTER(get_speed_out_max, *(float *)data = pid_get_out_max(&com->pfoc->speed_ctrl))
-SFM_SETTER(set_speed_out_max, pid_set_out_constraint(&com->pfoc->speed_ctrl, *(float *)data, -*(float *)data))
+SFM_PID_SETTER(set_speed_out_max, pid_set_out_constraint(&com->pfoc->speed_ctrl, *(float *)data, -*(float *)data))
 
 SFM_GETTER(get_speed_deadband, *(float *)data = pid_get_deadband(&com->pfoc->speed_ctrl))
-SFM_SETTER(set_speed_deadband, pid_set_deadband(&com->pfoc->speed_ctrl, *(float *)data))
+SFM_PID_SETTER(set_speed_deadband, pid_set_deadband(&com->pfoc->speed_ctrl, *(float *)data))
 
 SFM_GETTER(get_position_kp, *(float *)data = pid_get_kp(&com->pfoc->pos_ctrl))
-SFM_SETTER(set_position_kp, pid_set_kp(&com->pfoc->pos_ctrl, *(float *)data))
+SFM_PID_SETTER(set_position_kp, pid_set_kp(&com->pfoc->pos_ctrl, *(float *)data))
 
 SFM_GETTER(get_position_ki, *(float *)data = pid_get_ki(&com->pfoc->pos_ctrl))
-SFM_SETTER(set_position_ki, pid_set_ki(&com->pfoc->pos_ctrl, *(float *)data))
+SFM_PID_SETTER(set_position_ki, pid_set_ki(&com->pfoc->pos_ctrl, *(float *)data))
 
 SFM_GETTER(get_position_kd, *(float *)data = pid_get_kd(&com->pfoc->pos_ctrl))
-SFM_SETTER(set_position_kd, pid_set_kd(&com->pfoc->pos_ctrl, *(float *)data))
+SFM_PID_SETTER(set_position_kd, pid_set_kd(&com->pfoc->pos_ctrl, *(float *)data))
 
 SFM_GETTER(get_position_out_max, *(float *)data = pid_get_out_max(&com->pfoc->pos_ctrl))
-SFM_SETTER(set_position_out_max, pid_set_out_constraint(&com->pfoc->pos_ctrl, *(float *)data, -*(float *)data))
+SFM_PID_SETTER(set_position_out_max, pid_set_out_constraint(&com->pfoc->pos_ctrl, *(float *)data, -*(float *)data))
 
 SFM_GETTER(get_position_deadband, *(float *)data = pid_get_deadband(&com->pfoc->pos_ctrl))
-SFM_SETTER(set_position_deadband, pid_set_deadband(&com->pfoc->pos_ctrl, *(float *)data))
+SFM_PID_SETTER(set_position_deadband, pid_set_deadband(&com->pfoc->pos_ctrl, *(float *)data))
 
 SFM_GETTER(get_position_d_filter_fc, *(float *)data = pid_get_d_filter_fc(&com->pfoc->pos_ctrl))
-SFM_SETTER(set_position_d_filter_fc, pid_set_d_filter_fc(&com->pfoc->pos_ctrl, *(float *)data))
+SFM_PID_SETTER(set_position_d_filter_fc, pid_set_d_filter_fc(&com->pfoc->pos_ctrl, *(float *)data))
 
 SFM_GETTER(get_fw_kp, *(float *)data = pid_get_kp(&com->pfoc->fw_ctrl))
-SFM_SETTER(set_fw_kp, pid_set_kp(&com->pfoc->fw_ctrl, *(float *)data))
+SFM_PID_SETTER(set_fw_kp, pid_set_kp(&com->pfoc->fw_ctrl, *(float *)data))
 
 SFM_GETTER(get_fw_ki, *(float *)data = pid_get_ki(&com->pfoc->fw_ctrl))
-SFM_SETTER(set_fw_ki, pid_set_ki(&com->pfoc->fw_ctrl, *(float *)data))
+SFM_PID_SETTER(set_fw_ki, pid_set_ki(&com->pfoc->fw_ctrl, *(float *)data))
 
 SFM_GETTER(get_fw_out_min, *(float *)data = pid_get_out_min(&com->pfoc->fw_ctrl))
-SFM_SETTER(set_fw_out_min, pid_set_out_constraint(&com->pfoc->fw_ctrl, 0.0f, *(float *)data))
+SFM_PID_SETTER(set_fw_out_min, pid_set_out_constraint(&com->pfoc->fw_ctrl, 0.0f, *(float *)data))
 
 SFM_GETTER(get_fw_enable, *(uint8_t *)data = (uint8_t)foc_get_fw_enable(com->pfoc))
 SFM_SETTER(set_fw_enable, foc_set_fw_enable(com->pfoc, (_Bool)*(uint8_t *)data))

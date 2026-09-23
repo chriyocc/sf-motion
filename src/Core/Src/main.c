@@ -229,7 +229,7 @@ static void init_foc(void) {
   // Position PID parameter
   pid_reset(&hfoc1.pos_ctrl);
   pid_set_ts(&hfoc1.pos_ctrl, POSITION_TS);
-  pid_set_d_filter_fc(&hfoc1.pos_ctrl, 20.0f);
+  pid_set_d_filter_fc(&hfoc1.pos_ctrl, hfoc1.pos_ctrl.d_fc_lpf);
   pid_set_max_d(&hfoc1.pos_ctrl, 100.0f);
   // field weakening
   pid_reset(&hfoc1.fw_ctrl);

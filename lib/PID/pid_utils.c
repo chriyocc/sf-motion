@@ -6,6 +6,14 @@
  */
 
 #include "pid_utils.h"
+#include <string.h>
+
+/* Bit check remains valid with the firmware -ffast-math build. */
+static int finite_float(float value) {
+    uint32_t bits;
+    memcpy(&bits, &value, sizeof(bits));
+    return (bits & 0x7f800000u) != 0x7f800000u;
+}
 
 #ifndef TWO_PI
 #define TWO_PI 6.2831853f
@@ -22,24 +30,15 @@ float pi_control(PID_Controller_t *pi, float error) {
 
     float output = p_term + new_integral;
 
-    _Bool is_saturated = 0;
-
-    // Anti-windup with clamping
-    if (output > pi->out_max) {
-        output = pi->out_max;
-        if (p_term < output) is_saturated = 1;
-    }
-    else if (output < pi->out_min) {
-        output = pi->out_min;
-        if (p_term > output) is_saturated = 1;
-    }
-
-    if (is_saturated) {
-        pi->integral = output - p_term;
-    }
-    else {
+    /* Integrate only when unsaturated or when integration unwinds saturation. */
+    float increment = new_integral - pi->integral;
+    if (!((output > pi->out_max && increment > 0.0f) ||
+          (output < pi->out_min && increment < 0.0f))) {
         pi->integral = new_integral;
     }
+    output = p_term + pi->integral;
+    if (output > pi->out_max) output = pi->out_max;
+    else if (output < pi->out_min) output = pi->out_min;
 
     pi->mv = output;
 
@@ -91,24 +90,15 @@ float pid_control(PID_Controller_t *pid, float error) {
     float pd_term = p_term + d_term;
     float output = pd_term + new_integral;
 
-    _Bool is_saturated = 0;
-
-    // Anti-windup with clamping
-    if (output > pid->out_max) {
-        output = pid->out_max;
-        if (pd_term < output) is_saturated = 1;
-    }
-    else if (output < pid->out_min) {
-        output = pid->out_min;
-        if (pd_term > output) is_saturated = 1;
-    }
-
-    if (is_saturated) {
-        pid->integral = output - pd_term;
-    }
-    else {
+    /* Integrate only when unsaturated or when integration unwinds saturation. */
+    float increment = new_integral - pid->integral;
+    if (!((output > pid->out_max && increment > 0.0f) ||
+          (output < pid->out_min && increment < 0.0f))) {
         pid->integral = new_integral;
     }
+    output = pd_term + pid->integral;
+    if (output > pid->out_max) output = pid->out_max;
+    else if (output < pid->out_min) output = pid->out_min;
 
     return output;
 }
@@ -116,47 +106,59 @@ float pid_control(PID_Controller_t *pid, float error) {
 void pid_reset(PID_Controller_t *p) {
 	p->integral = 0;
     p->last_error = 0.0f;
+    p->d_filtered = 0.0f;
 }
 
-void pid_set_kp(PID_Controller_t *pid, float kp) {
-    if (kp < 0) return;
+int8_t pid_set_kp(PID_Controller_t *pid, float kp) {
+    if (!finite_float(kp) || kp < 0) return -1;
     pid->kp = kp;
+    return 0;
 }
 
-void pid_set_ki(PID_Controller_t *pid, float ki) {
-    if (ki < 0) return;
+int8_t pid_set_ki(PID_Controller_t *pid, float ki) {
+    if (!finite_float(ki) || ki < 0) return -1;
     pid->ki = ki;
+    return 0;
 }
 
-void pid_set_kd(PID_Controller_t *pid, float kd) {
-    if (kd < 0) return;
+int8_t pid_set_kd(PID_Controller_t *pid, float kd) {
+    if (!finite_float(kd) || kd < 0) return -1;
     pid->kd = kd;
+    return 0;
 }
 
-void pid_set_ts(PID_Controller_t *pid, float ts) {
-    if (ts <= 0) return;
+int8_t pid_set_ts(PID_Controller_t *pid, float ts) {
+    if (!finite_float(ts) || ts <= 0) return -1;
     pid->ts = ts;
+    return 0;
 }
 
-void pid_set_out_constraint(PID_Controller_t *pid, float max, float min) {
+int8_t pid_set_out_constraint(PID_Controller_t *pid, float max, float min) {
+    if (!finite_float(max) || !finite_float(min) || min > max) return -1;
     pid->out_max = max;
     pid->out_min = min;
+    return 0;
 }
 
-void pid_set_deadband(PID_Controller_t *pid, float deadband) {
+int8_t pid_set_deadband(PID_Controller_t *pid, float deadband) {
+    if (!finite_float(deadband) || deadband < 0) return -1;
     pid->e_deadband = deadband;
+    return 0;
 }
 
-void pid_set_d_filter_fc(PID_Controller_t *pid, float fc) {
+int8_t pid_set_d_filter_fc(PID_Controller_t *pid, float fc) {
+    if (!finite_float(fc) || fc <= 0) return -1;
     pid->d_fc_lpf = fc;
     float tau = 1.0f / (TWO_PI * fc);
     pid->d_alpha_filter = pid->ts / (tau + pid->ts);
     if (pid->d_alpha_filter > 1.0f) pid->d_alpha_filter = 1.0f;
+    return 0;
 }
 
-void pid_set_max_d(PID_Controller_t *pid, float max) {
-    if (max <= 0) return;
+int8_t pid_set_max_d(PID_Controller_t *pid, float max) {
+    if (!finite_float(max) || max <= 0) return -1;
     pid->d_max = max;
+    return 0;
 }
 
 float pid_get_kp(PID_Controller_t *pid) {

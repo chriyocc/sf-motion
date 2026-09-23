@@ -6,6 +6,7 @@ void sfm_usb_com_init(sfm_usb_com_t *usb, int (*send_data)(uint8_t*, uint16_t)) 
 }
 
 int8_t sfm_usb_com_start_send_data(sfm_usb_com_t *usb, uint8_t *data, uint16_t len) {
+    if (len > SFM_USB_COM_DATA_TX_MAX - 3) return -1;
     const uint16_t frame_header = SFM_USB_COM_FRAME_HEADER;
     uint16_t data_offset = 0;
     memcpy(usb->data_tx, &frame_header, sizeof(frame_header));
