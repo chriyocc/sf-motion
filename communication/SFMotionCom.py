@@ -9,7 +9,6 @@ import numpy as np
 from enum import IntEnum
 from pathlib import Path
 
-
 class SFMComType(IntEnum):
     RESPONSE = 0x00
     READ = 0x01
@@ -23,11 +22,12 @@ class SFMComType(IntEnum):
 class SFMotion:
     HEADER = b"\xA5\xA5"
 
-    def __init__(self, serial_conn=None, acq_thread=None, json_path=None):
+    def __init__(self, serial_conn=None, acq_thread=None, node_id=0, json_path=None):
         self._request_lock = threading.Lock()
         self._desynchronized = False
         self.ser = serial_conn
         self.acq_thread = acq_thread
+        self.node_id = node_id
 
         if json_path is None:
             json_path = Path(__file__).with_name("SFMotionRegisters.json")
@@ -73,7 +73,7 @@ class SFMotion:
     # ------------------------------------------------------------
 
     def _send_frame(self, com_type, address, data=b""):
-        payload = bytes([com_type, address]) + data
+        payload = bytes([com_type, self.node_id, address]) + data
         frame = (self.HEADER + bytes([len(payload)]) + payload)
         # print(f"TX: {frame.hex(' ')}")
         self.ser.write(frame)
@@ -110,8 +110,8 @@ class SFMotion:
                 raise RuntimeError("Communication is unsynchronized; reconnect before further requests")
             try:
                 self._send_frame(com_type, address, data)
-                response_address, response = self.acq_thread.response_queue.get(timeout=2)
-                if response_address != address or len(response) != expected_size:
+                response_node_id, response_address, response = self.acq_thread.response_queue.get(timeout=2)
+                if response_node_id != self.node_id or response_address != address or len(response) != expected_size:
                     raise RuntimeError("Unexpected response; reconnect before further requests")
             except Exception as exc:
                 self._desynchronized = True
@@ -148,6 +148,9 @@ class SFMotion:
         self._check_status(self._exchange(SFMComType.DISABLE_STREAMING, address))
 
     # ----------------------------------------------------------------------------------
+    
+    def get_version(self):
+        return struct.unpack("<3B", self._exchange(SFMComType.READ, 1, expected_size=3))
 
     def self_commissioning(self):
         self.set_start_measure_resistance()
@@ -159,6 +162,8 @@ class SFMotion:
         self.get_motor_param()
         self.set_foc_bandwidth(500)
         self.set_start_calibrate_abs_encoder()
+        self.set_pid_speed(0.005, 0.8, 10)
+        self.set_pid_position(10, 0, 0, 1000)
 
     def get_motor_param(self):
         pole_pairs = self.get_pole_pairs()
@@ -187,3 +192,47 @@ class SFMotion:
         self.set_iq_kp(iq_kp)
         self.set_iq_ki(iq_ki)
         self.set_iq_deadband(0)
+
+    def set_pid_speed(self, kp, ki, max_out, deadband=0):
+        self.set_speed_kp(kp)
+        self.set_speed_ki(ki)
+        self.set_speed_out_max(max_out)
+        self.set_speed_deadband(deadband)
+
+    def get_pid_speed(self):
+        kp = self.get_speed_kp()
+        ki = self.get_speed_ki()
+        max_out = self.get_speed_out_max()
+        deadband = self.get_speed_deadband()
+        return {
+            "kp": kp,
+            "ki": ki,
+            "max_out": max_out,
+            "deadband": deadband
+        }
+
+    def set_pid_position(self, kp, ki, kd, max_out, deadband=0, d_filter_fc=20):
+        self.set_position_kp(kp)
+        self.set_position_ki(ki)
+        self.set_position_kd(kd)
+        self.set_position_out_max(max_out)
+        self.set_position_deadband(deadband)
+        self.set_position_d_filter_fc(d_filter_fc)
+
+    def get_pid_position(self):
+        kp = self.get_position_kp()
+        ki = self.get_position_ki()
+        kd = self.get_position_kd()
+        max_out = self.get_position_out_max()
+        deadband = self.get_position_deadband()
+        d_filter_fc = self.get_position_d_filter_fc()
+        return {
+            "kp": kp,
+            "ki": ki,
+            "kd": kd,
+            "max_out": max_out,
+            "deadband": deadband,
+            "d_filter_fc": d_filter_fc
+        }
+
+    

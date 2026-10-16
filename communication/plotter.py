@@ -162,24 +162,26 @@ class DataAcquisitionThread(QtCore.QThread):
 
                 # Payload must contain:
                 # COM_TYPE + ADDRESS
-                if payload_length < 2:
+                if payload_length < 3:
                     self.raw_buffer = self.raw_buffer[frame_size:]
                     continue
 
                 com_type = payload[0]
-                address = payload[1]
-                data = payload[2:]
+                node_id = payload[1]
+                address = payload[2]
+                data = payload[3:]
 
                 # print(
                 #     f"RX frame: "
                 #     f"type=0x{com_type:02X}, "
+                #     f"node_id=0x{node_id:02X}, "
                 #     f"addr=0x{address:02X}, "
                 #     f"data={data.hex(' ')}"
                 # )
 
                 if com_type == 0x00: # RESPONSE
                     self.response_queue.put(
-                        (address, data)
+                        (node_id, address, data)
                     )
 
                 elif com_type == 0x05: # STREAMING
@@ -377,7 +379,7 @@ class PlotGraphWindow(QtWidgets.QMainWindow):
 
 
 class LivePlotter(QtWidgets.QMainWindow):
-    def __init__(self, max_points=1000, port=None, baudrate=115200):
+    def __init__(self, max_points=1000, port=None, baudrate=115200, node_id=0x00):
         super().__init__()
         
         self.max_points = max_points
@@ -385,6 +387,7 @@ class LivePlotter(QtWidgets.QMainWindow):
         self.acq_thread = None
         self.motor = None
         self.is_connected = False
+        self.node_id = node_id
         
         # Setup UI
         self.setup_ui()
@@ -639,7 +642,7 @@ class LivePlotter(QtWidgets.QMainWindow):
             
             # Initialize motor protocol
             # self.motor = MotorProtocol(self.serial_conn, self.acq_thread)
-            self.motor = SFMotion(self.serial_conn, self.acq_thread)
+            self.motor = SFMotion(self.serial_conn, self.acq_thread, self.node_id)
             
             # Update console namespace
             self.console_namespace["thread"] = self.acq_thread
@@ -666,6 +669,7 @@ class LivePlotter(QtWidgets.QMainWindow):
             elif motor_mode == 1:
                 self.enable_streaming(self.motor.channel.speed_set_point)
                 self.enable_streaming(self.motor.channel.actual_rpm)
+                self.enable_streaming(self.motor.channel.actual_angle)
             elif motor_mode == 2:
                 self.enable_streaming(self.motor.channel.position_set_point)
                 self.enable_streaming(self.motor.channel.actual_angle)

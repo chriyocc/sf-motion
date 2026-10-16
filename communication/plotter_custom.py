@@ -181,17 +181,17 @@ class DataAcquisitionThread(QtCore.QThread):
                 payload = bytes(self.raw_buffer[3:frame_size])
                 self.raw_buffer = self.raw_buffer[frame_size:]
 
-                if len(payload) < 2:
+                if len(payload) < 3:
                     continue
 
-                com_type, address = payload[:2]
-                data = payload[2:]
+                com_type, node_id, address = payload[:3]
+                data = payload[3:]
                 if com_type == 0x00:
-                    self.response_queue.put((address, data))
+                    self.response_queue.put((node_id, address, data))
                 elif com_type == 0x05 and len(data) == 4:
                     self.data_received.emit(address, struct.unpack("<f", data)[0])
                 elif com_type == 0x06:
-                    self.response_queue.put((address, data))
+                    self.response_queue.put((node_id, address, data))
 
             else:
                 self.raw_buffer.pop(0)
