@@ -2,7 +2,7 @@ from SFMotionCom import SFMotion
 
 
 class MotorProtocol:
-    """Compatibility API for the custom plotter using the current SFM protocol."""
+    """Compatibility API for both plotters using the current SFM protocol."""
 
     _channel_registers = {
         "ia": "ia",
@@ -30,8 +30,8 @@ class MotorProtocol:
         "v_bus": "v_bus",
     }
 
-    def __init__(self, serial_conn=None, acq_thread=None, config_file=None):
-        self.protocol = SFMotion(serial_conn, acq_thread)
+    def __init__(self, serial_conn=None, acq_thread=None, config_file=None, node_id=0):
+        self.protocol = SFMotion(serial_conn, acq_thread, node_id=node_id)
         self.ser = serial_conn
         self.acq_thread = acq_thread
         self.plotter_channels = []
@@ -216,4 +216,7 @@ class MotorProtocol:
                 if operation == "get":
                     return lambda: {"value": self._get_value(register)}
                 return lambda value: self._set_value(register, value)
-        raise AttributeError(name)
+        return getattr(self.protocol, name)
+
+    def __dir__(self):
+        return sorted(set(super().__dir__()) | set(dir(self.protocol)))

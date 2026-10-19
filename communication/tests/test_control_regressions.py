@@ -30,7 +30,7 @@ class ProtocolRegressionTests(unittest.TestCase):
         with self.assertRaises(TimeoutError):
             self.protocol.get_speed_kp()
         self.responses.get.side_effect = None
-        self.responses.get.return_value = (self.address("speed_kp"), struct.pack("<f", 123))
+        self.responses.get.return_value = (0, self.address("speed_kp"), struct.pack("<f", 123))
         with self.assertRaisesRegex(RuntimeError, "reconnect"):
             self.protocol.get_speed_kp()
         self.assertEqual(self.serial.write.call_count, 1)
@@ -44,15 +44,34 @@ class ProtocolRegressionTests(unittest.TestCase):
             self.motor.set_foc_motor_mode(6)
         self.assertEqual(self.serial.write.call_count, 2)
         self.assertEqual(self.serial.write.call_args.args[0],
-                         b"\xa5\xa5\x03\x02" + bytes([self.address("motor_mode"), 6]))
+                         b"\xa5\xa5\x04\x02\x00" + bytes([self.address("motor_mode"), 6]))
 
     def test_mismatched_reply_blocks_subsequent_writes(self):
-        self.responses.get.return_value = (self.address("speed_ki"), struct.pack("<f", 1))
+        self.responses.get.return_value = (0, self.address("speed_ki"), struct.pack("<f", 1))
         with self.assertRaisesRegex(RuntimeError, "Unexpected response"):
             self.protocol.get_speed_kp()
         with self.assertRaisesRegex(RuntimeError, "reconnect"):
             self.protocol.set_speed_kp(1)
         self.assertEqual(self.serial.write.call_count, 1)
+
+    def test_other_device_reply_quarantines_connection(self):
+        self.responses.get.return_value = (7, self.address("speed_kp"), struct.pack("<f", 1))
+        with self.assertRaisesRegex(RuntimeError, "Unexpected response"):
+            self.protocol.get_speed_kp()
+        with self.assertRaisesRegex(RuntimeError, "reconnect"):
+            self.protocol.set_speed_kp(1)
+        self.assertEqual(self.serial.write.call_count, 1)
+
+    def test_version_uses_validated_exchange(self):
+        self.responses.get.return_value = (0, 1, bytes([0, 1, 0]))
+        self.assertEqual(self.protocol.get_version(), (0, 1, 0))
+        self.serial.write.assert_called_once_with(b"\xa5\xa5\x03\x01\x00\x01")
+
+    def test_explicit_node_id_is_sent_and_checked(self):
+        motor = MotorProtocol(self.serial, SimpleNamespace(response_queue=self.responses), node_id=7)
+        self.responses.get.return_value = (7, 1, bytes([0, 1, 0]))
+        self.assertEqual(motor.get_version(), (0, 1, 0))
+        self.assertEqual(self.serial.write.call_args.args[0][4], 7)
 
     def test_invalid_group_is_rejected_before_any_write(self):
         for invalid in (-2, float("nan"), float("inf")):
@@ -65,16 +84,16 @@ class ProtocolRegressionTests(unittest.TestCase):
         self.serial.write.assert_not_called()
 
     def test_mid_group_failure_reports_partial_update_and_stops(self):
-        self.responses.get.side_effect = [(self.address("speed_kp"), b"\x00"), queue.Empty]
+        self.responses.get.side_effect = [(0, self.address("speed_kp"), b"\x00"), queue.Empty]
         with self.assertRaisesRegex(RuntimeError, "partially applied"):
             self.motor.set_pid_speed(1, 2, 3, 0)
         self.assertEqual(self.serial.write.call_count, 2)
 
     def test_device_rejection_is_not_success_or_transport_desync(self):
-        self.responses.get.return_value = (self.address("speed_kp"), b"\xff")
+        self.responses.get.return_value = (0, self.address("speed_kp"), b"\xff")
         with self.assertRaisesRegex(RuntimeError, "Device returned error: -1"):
             self.protocol.set_speed_kp(1)
-        self.responses.get.return_value = (self.address("speed_kp"), b"\x00")
+        self.responses.get.return_value = (0, self.address("speed_kp"), b"\x00")
         self.assertTrue(self.protocol.set_speed_kp(2))
 
 

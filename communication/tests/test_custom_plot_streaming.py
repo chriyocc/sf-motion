@@ -37,10 +37,17 @@ class CustomPlotStreamingTests(unittest.TestCase):
 
     def feed_sample(self, name, value):
         address = self.plotter.motor.plotter_dict[name]
-        frame = b"\xA5\xA5\x06\x05" + bytes([address]) + struct.pack("<f", value)
+        frame = b"\xA5\xA5\x07\x05\x00" + bytes([address]) + struct.pack("<f", value)
         for fragment in (frame[:4], frame[4:]):
             self.reader.raw_buffer.extend(fragment)
             self.reader.parse_buffer()
+
+    def test_response_keeps_node_and_short_frame_is_skipped(self):
+        self.reader.raw_buffer.extend(b"\xa5\xa5\x02\x00\x07")
+        self.reader.raw_buffer.extend(b"\xa5\xa5\x04\x00\x07\x0e\x00")
+        self.reader.parse_buffer()
+        self.assertEqual(self.reader.response_queue.get_nowait(), (7, 14, b"\x00"))
+        self.assertFalse(self.reader.raw_buffer)
 
     def test_interleaved_frames_produce_continuous_curves(self):
         for index in range(6):

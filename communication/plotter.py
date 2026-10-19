@@ -1,4 +1,5 @@
 import sys
+import ast
 import struct
 import numpy as np
 import pyqtgraph as pg
@@ -12,7 +13,7 @@ import time
 import io
 import contextlib
 import traceback
-from SFMotionCom import SFMotion
+from MotorProtocol import MotorProtocol
 import queue
 import colorsys
 
@@ -600,12 +601,9 @@ class LivePlotter(QtWidgets.QMainWindow):
         try:
             buffer = io.StringIO()
             with contextlib.redirect_stdout(buffer):
-                try:
-                    result = eval(cmd, globals(), self.console_namespace)
-                    if result is not None:
-                        print(result)
-                except SyntaxError:
-                    exec(cmd, globals(), self.console_namespace)
+                statements = ast.parse(cmd, mode="exec")
+                code = compile(ast.Interactive(body=statements.body), "<console>", "single")
+                exec(code, globals(), self.console_namespace)
             out = buffer.getvalue()
             if out:
                 self.console_output.appendPlainText(out)
@@ -641,8 +639,7 @@ class LivePlotter(QtWidgets.QMainWindow):
             self.acq_thread.start()
             
             # Initialize motor protocol
-            # self.motor = MotorProtocol(self.serial_conn, self.acq_thread)
-            self.motor = SFMotion(self.serial_conn, self.acq_thread, self.node_id)
+            self.motor = MotorProtocol(self.serial_conn, self.acq_thread, node_id=self.node_id)
             
             # Update console namespace
             self.console_namespace["thread"] = self.acq_thread
