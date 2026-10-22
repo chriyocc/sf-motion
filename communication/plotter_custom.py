@@ -17,6 +17,8 @@ import serial.tools.list_ports
 from PyQt5 import QtCore, QtWidgets
 
 from MotorProtocol import MotorProtocol
+from gui_theme import SPACE, stylesheet, style_plot, terminal_font, ui_font
+from gui_tooltips import apply_action_tooltips, apply_window_tooltips, parameter_tip, tip, update_control_tooltips
 
 
 MODE_LABELS = {
@@ -44,29 +46,38 @@ PLOT_PRESETS = {
     "Voltage": ["v_bus", "vd", "vq", "va", "vb", "vc"],
 }
 
-ORIGINAL_PID_VALUES = {
-    "pid_id.kp": 0.02,
-    "pid_id.ki": 12.0,
-    "pid_id.deadband": 0.0,
-    "pid_iq.kp": 0.02,
-    "pid_iq.ki": 12.0,
-    "pid_iq.deadband": 0.0,
-    "pid_speed.kp": 0.01,
-    "pid_speed.ki": 0.1,
-    "pid_speed.out_max": 10.0,
-    "pid_speed.deadband": 0.01,
-    "pid_position.kp": 4.1,
-    "pid_position.ki": 0.0,
-    "pid_position.kd": 0.21,
-    "pid_position.out_max": 3.0,
-    "pid_position.deadband": 0.01,
-    "pid_position.d_fc": 100.0,
-    "field_weakening.kp": 0.1,
-    "field_weakening.ki": 1.0,
-    "field_weakening.out_min": -3.5,
-    "field_weakening_enable": False,
-    "mtpa_enable": False,
-}
+class ParameterExportDialog(QtWidgets.QDialog):
+    def __init__(self, sections, parent=None):
+        super().__init__(parent)
+        self.setWindowTitle("Export Parameters")
+        layout = QtWidgets.QVBoxLayout(self)
+        layout.setContentsMargins(16, 16, 16, 16)
+        layout.setSpacing(12)
+        layout.addWidget(QtWidgets.QLabel("Choose sections to export:"))
+        self.section_checks = {}
+        for title in sections:
+            checkbox = QtWidgets.QCheckBox(title)
+            checkbox.setToolTip(tip("Export section checkboxes"))
+            checkbox.setChecked(True)
+            checkbox.toggled.connect(self.update_export_button)
+            self.section_checks[title] = checkbox
+            layout.addWidget(checkbox)
+        self.buttons = QtWidgets.QDialogButtonBox(
+            QtWidgets.QDialogButtonBox.Save | QtWidgets.QDialogButtonBox.Cancel
+        )
+        self.buttons.button(QtWidgets.QDialogButtonBox.Save).setText("Export")
+        self.buttons.accepted.connect(self.accept)
+        self.buttons.rejected.connect(self.reject)
+        layout.addWidget(self.buttons)
+
+    def selected_sections(self):
+        return [title for title, checkbox in self.section_checks.items() if checkbox.isChecked()]
+
+    def update_export_button(self):
+        if hasattr(self, "buttons"):
+            self.buttons.button(QtWidgets.QDialogButtonBox.Save).setEnabled(
+                bool(self.selected_sections())
+            )
 
 
 class SerialPortDialog(QtWidgets.QDialog):
@@ -77,18 +88,24 @@ class SerialPortDialog(QtWidgets.QDialog):
         self.setFixedWidth(420)
 
         layout = QtWidgets.QVBoxLayout(self)
-        layout.addWidget(QtWidgets.QLabel("Select Serial Port:"))
+        layout.setContentsMargins(16, 16, 16, 16)
+        layout.setSpacing(8)
+        port_label = QtWidgets.QLabel("Select Serial Port:")
+        layout.addWidget(port_label)
 
         self.port_combo = QtWidgets.QComboBox()
         self.port_combo.setPlaceholderText("Select port...")
+        port_label.setBuddy(self.port_combo)
         layout.addWidget(self.port_combo)
 
         refresh_btn = QtWidgets.QPushButton("Refresh Ports")
         refresh_btn.clicked.connect(self.refresh_ports)
         layout.addWidget(refresh_btn)
 
-        layout.addWidget(QtWidgets.QLabel("Baudrate:"))
+        baud_label = QtWidgets.QLabel("Baudrate:")
+        layout.addWidget(baud_label)
         self.baud_combo = QtWidgets.QComboBox()
+        baud_label.setBuddy(self.baud_combo)
         self.baud_combo.addItems(
             ["9600", "19200", "38400", "57600", "115200", "230400", "460800"]
         )
@@ -101,6 +118,12 @@ class SerialPortDialog(QtWidgets.QDialog):
         button_box.accepted.connect(self.accept)
         button_box.rejected.connect(self.reject)
         layout.addWidget(button_box)
+
+        self.port_combo.setToolTip(tip("Serial port selector"))
+        port_label.setToolTip(tip("Serial port selector"))
+        self.baud_combo.setToolTip(tip("Baudrate"))
+        baud_label.setToolTip(tip("Baudrate"))
+        apply_action_tooltips(self)
 
         self.refresh_ports()
         if self.port_combo.count() == 1:
@@ -335,128 +358,8 @@ class LivePlotter(QtWidgets.QMainWindow):
         self.setGeometry(100, 100, 1320, 760)
         self.setMinimumSize(980, 620)
 
-        self.setStyleSheet(
-            """
-            QMainWindow, QWidget {
-                background: #f4f5f7;
-                color: #20242a;
-                font-size: 10pt;
-            }
-            QToolBar {
-                background: #20242a;
-                spacing: 6px;
-                padding: 6px;
-                border: 0;
-            }
-            QToolButton {
-                background: #f4f5f7;
-                color: #20242a;
-                border: 1px solid #c8cdd5;
-                border-radius: 4px;
-                padding: 6px 10px;
-            }
-            QToolButton:disabled {
-                background: #555b64;
-                color: #b8bdc5;
-            }
-            QPushButton {
-                background: #ffffff;
-                border: 1px solid #c8cdd5;
-                border-radius: 4px;
-                padding: 6px 10px;
-            }
-            QPushButton:hover {
-                border-color: #6a7a90;
-            }
-            QPushButton:disabled {
-                background: #e2e5e9;
-                color: #8a929e;
-            }
-            QPushButton:checked {
-                background: #265dd8;
-                border-color: #1d48aa;
-                color: #ffffff;
-                font-weight: 600;
-            }
-            QPushButton#DangerButton, QToolButton#DangerButton {
-                background: #a93632;
-                border-color: #8d2b28;
-                color: #ffffff;
-                font-weight: 600;
-            }
-            QPushButton#ModeButton:checked {
-                background: #1f7a55;
-                border-color: #176142;
-                color: #ffffff;
-            }
-            QPushButton#PresetButton:checked {
-                background: #344052;
-                border-color: #20242a;
-                color: #ffffff;
-            }
-            QFrame#RealtimeStrip, QFrame#TerminalPanel {
-                background: #ffffff;
-                border-top: 1px solid #d6dae1;
-            }
-            QLabel#RealtimeName {
-                color: #697282;
-                font-size: 8pt;
-            }
-            QLabel#RealtimeValue {
-                color: #20242a;
-                font-weight: 700;
-                font-size: 10pt;
-            }
-            QPushButton#PrimaryButton {
-                background: #265dd8;
-                border-color: #1d48aa;
-                color: #ffffff;
-                font-weight: 600;
-            }
-            QListWidget {
-                background: #20242a;
-                color: #dce1e8;
-                border: 0;
-                outline: 0;
-                padding: 8px;
-            }
-            QListWidget::item {
-                padding: 10px 12px;
-                border-radius: 4px;
-                margin: 2px 0;
-            }
-            QListWidget::item:selected {
-                background: #344052;
-                color: #ffffff;
-            }
-            QGroupBox {
-                background: #ffffff;
-                border: 1px solid #d6dae1;
-                border-radius: 6px;
-                margin-top: 16px;
-                padding: 12px;
-                font-weight: 600;
-            }
-            QGroupBox::title {
-                subcontrol-origin: margin;
-                left: 10px;
-                padding: 0 5px;
-            }
-            QLineEdit, QDoubleSpinBox, QSpinBox, QComboBox, QPlainTextEdit {
-                background: #ffffff;
-                border: 1px solid #c8cdd5;
-                border-radius: 4px;
-                padding: 4px;
-            }
-            QLabel#MetricValue {
-                font-size: 16pt;
-                font-weight: 700;
-            }
-            QLabel#SubtleText {
-                color: #697282;
-            }
-            """
-        )
+        self.setFont(ui_font())
+        self.setStyleSheet(stylesheet())
 
         self.setup_toolbar()
 
@@ -466,28 +369,52 @@ class LivePlotter(QtWidgets.QMainWindow):
         outer_layout.setContentsMargins(0, 0, 0, 0)
         outer_layout.setSpacing(0)
 
-        root_layout = QtWidgets.QHBoxLayout()
+        self.terminal_splitter = QtWidgets.QSplitter(QtCore.Qt.Vertical)
+        self.terminal_splitter.setObjectName("TerminalSplitter")
+        self.terminal_splitter.setAccessibleName("Workspace and terminal height")
+        self.terminal_splitter.setChildrenCollapsible(False)
+        self.terminal_splitter.setHandleWidth(10)
+        outer_layout.addWidget(self.terminal_splitter)
+
+        workspace = QtWidgets.QWidget()
+        workspace_layout = QtWidgets.QVBoxLayout(workspace)
+        workspace_layout.setContentsMargins(0, 0, 0, 0)
+        workspace_layout.setSpacing(0)
+        root_container = QtWidgets.QWidget()
+        root_layout = QtWidgets.QHBoxLayout(root_container)
         root_layout.setContentsMargins(0, 0, 0, 0)
         root_layout.setSpacing(0)
-        outer_layout.addLayout(root_layout, 1)
+        workspace_layout.addWidget(root_container, 1)
+        self.terminal_splitter.addWidget(workspace)
 
+        navigation = QtWidgets.QFrame()
+        navigation.setObjectName("Navigation")
+        navigation.setFixedWidth(184)
+        navigation_layout = QtWidgets.QVBoxLayout(navigation)
+        navigation_layout.setContentsMargins(8, 16, 8, 8)
+        navigation_layout.setSpacing(8)
+        brand = QtWidgets.QLabel("sf-Motion")
+        brand.setObjectName("Brand")
+        navigation_layout.addWidget(brand)
+        caption = QtWidgets.QLabel("MOTOR WORKSPACE")
+        caption.setObjectName("BrandCaption")
+        navigation_layout.addWidget(caption)
         self.nav_list = QtWidgets.QListWidget()
-        self.nav_list.setFixedWidth(180)
+        self.nav_list.setObjectName("NavigationList")
+        self.nav_list.setAccessibleName("Workspace pages")
+        self.nav_list.setVerticalScrollMode(QtWidgets.QAbstractItemView.ScrollPerPixel)
         self.nav_list.addItems(
             ["Dashboard", "Control", "Realtime Plot", "Commissioning", "Parameters", "Console"]
         )
         self.nav_list.currentRowChanged.connect(self.show_page)
-        root_layout.addWidget(self.nav_list)
+        self.nav_list.currentRowChanged.connect(
+            lambda row: self.nav_list.scrollToItem(self.nav_list.item(row))
+        )
+        navigation_layout.addWidget(self.nav_list, 1)
+        root_layout.addWidget(navigation)
 
         self.pages = QtWidgets.QStackedWidget()
         root_layout.addWidget(self.pages, 1)
-
-        self.side_plot_container = QtWidgets.QWidget()
-        self.side_plot_container.setMinimumWidth(360)
-        self.side_plot_container.setVisible(False)
-        self.side_plot_layout = QtWidgets.QVBoxLayout(self.side_plot_container)
-        self.side_plot_layout.setContentsMargins(8, 8, 8, 8)
-        root_layout.addWidget(self.side_plot_container)
 
         self.dashboard_page = self.create_dashboard_page()
         self.control_page = self.create_control_page()
@@ -517,8 +444,14 @@ class LivePlotter(QtWidgets.QMainWindow):
 
         self.attach_plot_to_page()
 
-        outer_layout.addWidget(self.create_realtime_strip())
-        outer_layout.addWidget(self.create_terminal_panel())
+        workspace_layout.addWidget(self.create_realtime_strip())
+        self.terminal_panel = self.create_terminal_panel()
+        self.terminal_splitter.addWidget(self.terminal_panel)
+        self.terminal_splitter.setStretchFactor(0, 1)
+        self.terminal_splitter.setStretchFactor(1, 0)
+        self.terminal_splitter.setSizes([500, 160])
+        self.terminal_splitter.handle(1).setToolTip("Drag up or down to resize the terminal")
+        apply_window_tooltips(self)
 
     def setup_toolbar(self):
         toolbar = QtWidgets.QToolBar("Main")
@@ -538,6 +471,7 @@ class LivePlotter(QtWidgets.QMainWindow):
         self.disable_action = QtWidgets.QAction("Disable Motor", self)
         self.disable_action.triggered.connect(self.disable_motor)
         toolbar.addAction(self.disable_action)
+        toolbar.widgetForAction(self.disable_action).setObjectName("DangerButton")
 
         self.save_config_action = QtWidgets.QAction("Save Config", self)
         self.save_config_action.triggered.connect(self.save_config)
@@ -551,29 +485,42 @@ class LivePlotter(QtWidgets.QMainWindow):
 
         toolbar.addSeparator()
 
-        self.side_plot_action = QtWidgets.QAction("Dock Plot Side", self)
-        self.side_plot_action.setCheckable(True)
-        self.side_plot_action.triggered.connect(self.toggle_side_plot)
-        toolbar.addAction(self.side_plot_action)
-
         self.float_plot_action = QtWidgets.QAction("Float Plot", self)
         self.float_plot_action.setCheckable(True)
         self.float_plot_action.triggered.connect(self.toggle_float_plot)
         toolbar.addAction(self.float_plot_action)
 
-    def page_widget(self):
+    def page_widget(self, title, description, scrollable=False):
         page = QtWidgets.QWidget()
-        layout = QtWidgets.QVBoxLayout(page)
-        layout.setContentsMargins(18, 18, 18, 18)
-        layout.setSpacing(14)
+        page.setObjectName("Page")
+        outer = QtWidgets.QVBoxLayout(page)
+        outer.setContentsMargins(0, 0, 0, 0)
+        if scrollable:
+            scroll = QtWidgets.QScrollArea()
+            scroll.setWidgetResizable(True)
+            scroll.setHorizontalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOff)
+            content = QtWidgets.QWidget()
+            content.setObjectName("PageContent")
+            layout = QtWidgets.QVBoxLayout(content)
+            scroll.setWidget(content)
+            outer.addWidget(scroll)
+        else:
+            layout = outer
+        layout.setContentsMargins(SPACE["page"], SPACE["section"], SPACE["page"], SPACE["section"])
+        layout.setSpacing(SPACE["medium"])
+        heading = QtWidgets.QLabel(title)
+        heading.setObjectName("PageTitle")
+        layout.addWidget(heading)
+        subtitle = QtWidgets.QLabel(description)
+        subtitle.setWordWrap(True)
+        subtitle.setObjectName("SubtleText")
+        layout.addWidget(subtitle)
         return page, layout
 
     def create_dashboard_page(self):
-        page, layout = self.page_widget()
-
-        title = QtWidgets.QLabel("sf-Motion Control")
-        title.setObjectName("MetricValue")
-        layout.addWidget(title)
+        page, layout = self.page_widget(
+            "Dashboard", "Connection, motor state, and shortcuts for your bench session.", True
+        )
 
         metrics = QtWidgets.QHBoxLayout()
         self.connection_metric = self.metric_box("Connection", "Disconnected")
@@ -620,7 +567,9 @@ class LivePlotter(QtWidgets.QMainWindow):
         return {"box": box, "value": value_label}
 
     def create_control_page(self):
-        page, layout = self.page_widget()
+        page, layout = self.page_widget(
+            'Control', 'Set motor mode and setpoints, or command a relative position move.', True
+        )
 
         group = QtWidgets.QGroupBox("Motor Control")
         group_layout = QtWidgets.QGridLayout(group)
@@ -645,7 +594,9 @@ class LivePlotter(QtWidgets.QMainWindow):
         self.setpoint_spin.setSingleStep(0.05)
         self.setpoint_spin.setKeyboardTracking(False)
         self.setpoint_spin.valueChanged.connect(self.on_setpoint_value_changed)
-        group_layout.addWidget(QtWidgets.QLabel("Setpoint"), 1, 0)
+        field_label = QtWidgets.QLabel("Setpoint")
+        field_label.setBuddy(self.setpoint_spin)
+        group_layout.addWidget(field_label, 1, 0)
         group_layout.addWidget(self.setpoint_spin, 1, 1, 1, 2)
 
         self.setpoint_unit_label = QtWidgets.QLabel("")
@@ -674,7 +625,9 @@ class LivePlotter(QtWidgets.QMainWindow):
         self.relative_position_spin.setDecimals(3)
         self.relative_position_spin.setSingleStep(5.0)
         self.relative_position_spin.setSuffix(" deg")
-        relative_layout.addWidget(QtWidgets.QLabel("Move from latest actual_angle"), 0, 0)
+        field_label = QtWidgets.QLabel("Move from latest actual_angle")
+        field_label.setBuddy(self.relative_position_spin)
+        relative_layout.addWidget(field_label, 0, 0)
         relative_layout.addWidget(self.relative_position_spin, 0, 1)
         move_relative_btn = QtWidgets.QPushButton("Move Relative")
         move_relative_btn.clicked.connect(self.move_relative_position)
@@ -691,14 +644,17 @@ class LivePlotter(QtWidgets.QMainWindow):
         return page
 
     def create_plot_page(self):
-        page, layout = self.page_widget()
-
-        splitter = QtWidgets.QSplitter(QtCore.Qt.Horizontal)
-        layout.addWidget(splitter, 1)
+        page, layout = self.page_widget(
+            'Realtime Plot', 'Inspect live signals. Choose a preset or select individual channels.', True
+        )
 
         self.plot_page_host = QtWidgets.QWidget()
         self.plot_page_host_layout = QtWidgets.QVBoxLayout(self.plot_page_host)
         self.plot_page_host_layout.setContentsMargins(0, 0, 0, 0)
+
+        layout.addWidget(self.plot_page_host, 1)
+        self.plot_workspace = QtWidgets.QSplitter(QtCore.Qt.Horizontal)
+        self.plot_workspace.setMinimumHeight(300)
 
         self.plot_panel = QtWidgets.QWidget()
         self.plot_panel_layout = QtWidgets.QVBoxLayout(self.plot_panel)
@@ -709,40 +665,45 @@ class LivePlotter(QtWidgets.QMainWindow):
         self.plot_panel_layout.addWidget(self.plot_location_label)
 
         self.plot_widget = pg.PlotWidget()
+        self.plot_widget.setSizePolicy(QtWidgets.QSizePolicy.Ignored, QtWidgets.QSizePolicy.Ignored)
         self.plot_widget.setBackground("w")
         self.plot_widget.setLabel("left", "Value")
         self.plot_widget.setLabel("bottom", "Sample")
         self.plot_widget.showGrid(x=True, y=True, alpha=0.3)
         self.plot_widget.addLegend()
+        style_plot(self.plot_widget)
         self.plot_panel_layout.addWidget(self.plot_widget, 1)
 
-        control_layout = QtWidgets.QHBoxLayout()
+        control_layout = QtWidgets.QGridLayout()
         self.clear_button = QtWidgets.QPushButton("Clear")
         self.clear_button.clicked.connect(self.clear_data)
-        control_layout.addWidget(self.clear_button)
+        control_layout.addWidget(self.clear_button, 0, 0)
 
         self.pause_button = QtWidgets.QPushButton("Pause")
         self.pause_button.clicked.connect(self.toggle_pause)
         self.paused = False
-        control_layout.addWidget(self.pause_button)
+        control_layout.addWidget(self.pause_button, 0, 1)
 
         self.auto_range_check = QtWidgets.QCheckBox("Auto Range")
         self.auto_range_check.setChecked(True)
-        control_layout.addWidget(self.auto_range_check)
+        control_layout.addWidget(self.auto_range_check, 0, 2)
 
         self.info_label = QtWidgets.QLabel("Samples: 0 | FPS: 0")
-        control_layout.addStretch()
-        control_layout.addWidget(self.info_label)
+        control_layout.setColumnStretch(2, 1)
+        control_layout.addWidget(self.info_label, 1, 0, 1, 3, QtCore.Qt.AlignRight)
         self.plot_panel_layout.addLayout(control_layout)
 
-        splitter.addWidget(self.plot_page_host)
+        self.plot_workspace.addWidget(self.plot_panel)
 
         side_panel = QtWidgets.QWidget()
         side_layout = QtWidgets.QVBoxLayout(side_panel)
-        side_layout.setContentsMargins(10, 0, 0, 0)
+        side_layout.setContentsMargins(SPACE["medium"], 0, 0, 0)
+        side_panel.setMinimumWidth(224)
 
         presets_group = QtWidgets.QGroupBox("Presets")
+        presets_group.setSizePolicy(QtWidgets.QSizePolicy.Preferred, QtWidgets.QSizePolicy.Fixed)
         presets_layout = QtWidgets.QGridLayout(presets_group)
+        presets_layout.setSizeConstraint(QtWidgets.QLayout.SetMinimumSize)
         self.preset_buttons = {}
         for idx, name in enumerate(PLOT_PRESETS):
             button = QtWidgets.QPushButton(name)
@@ -768,12 +729,14 @@ class LivePlotter(QtWidgets.QMainWindow):
         self.remove_channels_button.clicked.connect(self.remove_all_plot_channels)
         side_layout.addWidget(self.remove_channels_button)
 
-        splitter.addWidget(side_panel)
-        splitter.setSizes([880, 300])
+        self.plot_workspace.addWidget(side_panel)
+        self.plot_workspace.setSizes([880, 300])
         return page
 
     def create_commissioning_page(self):
-        page, layout = self.page_widget()
+        page, layout = self.page_widget(
+            'Commissioning', 'Prepare the motor and run the existing measurement and calibration helpers.', True
+        )
 
         prep_group = QtWidgets.QGroupBox("Commissioning")
         prep_layout = QtWidgets.QGridLayout(prep_group)
@@ -781,7 +744,9 @@ class LivePlotter(QtWidgets.QMainWindow):
         self.pole_pairs_spin = QtWidgets.QSpinBox()
         self.pole_pairs_spin.setRange(1, 255)
         self.pole_pairs_spin.setValue(7)
-        prep_layout.addWidget(QtWidgets.QLabel("Pole pairs"), 0, 0)
+        field_label = QtWidgets.QLabel("Pole pairs")
+        field_label.setBuddy(self.pole_pairs_spin)
+        prep_layout.addWidget(field_label, 0, 0)
         prep_layout.addWidget(self.pole_pairs_spin, 0, 1)
 
         set_sensored_btn = QtWidgets.QPushButton("Set Sensored FOC")
@@ -799,16 +764,24 @@ class LivePlotter(QtWidgets.QMainWindow):
 
         read_btn = QtWidgets.QPushButton("Read Motor Params")
         read_btn.clicked.connect(self.read_motor_params)
-        prep_layout.addWidget(read_btn, 2, 1)
+        prep_layout.addWidget(read_btn, 3, 0)
+
+        preparation = QtWidgets.QLabel(
+            "Before commissioning: connect motor phases and DC power, secure the motor, "
+            "and leave the shaft clear. Wait for calibration movement to finish before saving."
+        )
+        preparation.setWordWrap(True)
+        preparation.setObjectName("SubtleText")
+        prep_layout.addWidget(preparation, 2, 1)
 
         save_btn = QtWidgets.QPushButton("Save Config")
         save_btn.clicked.connect(self.save_config)
-        prep_layout.addWidget(save_btn, 3, 0)
+        prep_layout.addWidget(save_btn, 3, 1)
 
         disable_btn = QtWidgets.QPushButton("Disable Motor")
         disable_btn.setObjectName("DangerButton")
         disable_btn.clicked.connect(self.disable_motor)
-        prep_layout.addWidget(disable_btn, 3, 1)
+        prep_layout.addWidget(disable_btn, 4, 0, 1, 2)
 
         layout.addWidget(prep_group)
 
@@ -829,17 +802,23 @@ class LivePlotter(QtWidgets.QMainWindow):
         return page
 
     def create_parameters_page(self):
-        page, layout = self.page_widget()
+        page, layout = self.page_widget(
+            'Parameters', 'Read, review, and apply motor settings. Save Config persists applied values.', False
+        )
 
         scroll = QtWidgets.QScrollArea()
+        scroll.setObjectName("ParameterScroll")
         scroll.setWidgetResizable(True)
+        scroll.setHorizontalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOff)
         container = QtWidgets.QWidget()
         self.parameters_layout = QtWidgets.QVBoxLayout(container)
-        self.parameters_layout.setSpacing(12)
+        self.parameters_layout.setSpacing(SPACE["section"])
+        self.parameters_layout.setContentsMargins(0, 0, SPACE["small"], 0)
         scroll.setWidget(container)
-        layout.addWidget(scroll)
+        layout.addWidget(scroll, 1)
 
         self.parameter_widgets = {}
+        self.parameter_sections = {}
         self.add_parameter_group(
             "Motor Identity",
             [
@@ -888,40 +867,45 @@ class LivePlotter(QtWidgets.QMainWindow):
             ],
         )
 
-        self.set_original_pid_values()
-
-        buttons = QtWidgets.QHBoxLayout()
+        self.parameter_actions = QtWidgets.QFrame()
+        self.parameter_actions.setObjectName("ParameterActions")
+        buttons = QtWidgets.QGridLayout(self.parameter_actions)
+        buttons.setContentsMargins(12, 8, 12, 8)
+        buttons.setSpacing(8)
         read_all_btn = QtWidgets.QPushButton("Read All Parameters")
         read_all_btn.clicked.connect(self.read_all_parameters)
-        buttons.addWidget(read_all_btn)
+        buttons.addWidget(read_all_btn, 0, 0)
 
-        restore_pid_btn = QtWidgets.QPushButton("Use Original PID Values")
-        restore_pid_btn.clicked.connect(self.set_original_pid_values)
-        buttons.addWidget(restore_pid_btn)
+        export_btn = QtWidgets.QPushButton("Export Parameters")
+        export_btn.clicked.connect(self.export_parameters)
+        buttons.addWidget(export_btn, 0, 2)
 
-        apply_original_pid_btn = QtWidgets.QPushButton("Apply Original PID")
-        apply_original_pid_btn.clicked.connect(self.apply_original_pid_values)
-        buttons.addWidget(apply_original_pid_btn)
+        import_btn = QtWidgets.QPushButton("Import Parameters")
+        import_btn.clicked.connect(self.import_parameters)
+        buttons.addWidget(import_btn, 0, 1)
 
         apply_all_btn = QtWidgets.QPushButton("Apply All Parameters")
         apply_all_btn.setObjectName("PrimaryButton")
         apply_all_btn.clicked.connect(self.apply_all_parameters)
-        buttons.addWidget(apply_all_btn)
+        buttons.addWidget(apply_all_btn, 1, 0)
 
         save_btn = QtWidgets.QPushButton("Save Config")
         save_btn.clicked.connect(self.save_config)
-        buttons.addWidget(save_btn)
-        buttons.addStretch()
-        self.parameters_layout.addLayout(buttons)
+        buttons.addWidget(save_btn, 1, 1)
+        layout.addWidget(self.parameter_actions)
         self.parameters_layout.addStretch()
+        QtWidgets.QWidget.setTabOrder(read_all_btn, import_btn)
+        QtWidgets.QWidget.setTabOrder(import_btn, export_btn)
+        QtWidgets.QWidget.setTabOrder(export_btn, apply_all_btn)
+        QtWidgets.QWidget.setTabOrder(apply_all_btn, save_btn)
         return page
 
     def create_realtime_strip(self):
         frame = QtWidgets.QFrame()
         frame.setObjectName("RealtimeStrip")
         layout = QtWidgets.QHBoxLayout(frame)
-        layout.setContentsMargins(12, 6, 12, 6)
-        layout.setSpacing(18)
+        layout.setContentsMargins(16, 8, 16, 8)
+        layout.setSpacing(24)
 
         self.realtime_labels = {}
         for key, title, unit in [
@@ -951,7 +935,7 @@ class LivePlotter(QtWidgets.QMainWindow):
         frame = QtWidgets.QFrame()
         frame.setObjectName("TerminalPanel")
         layout = QtWidgets.QVBoxLayout(frame)
-        layout.setContentsMargins(8, 6, 8, 8)
+        layout.setContentsMargins(16, 8, 16, 8)
         layout.setSpacing(4)
 
         header = QtWidgets.QHBoxLayout()
@@ -966,21 +950,40 @@ class LivePlotter(QtWidgets.QMainWindow):
         layout.addLayout(header)
 
         self.console_output = QtWidgets.QPlainTextEdit()
+        self.console_output.setObjectName("TerminalOutput")
+        self.console_output.setFont(terminal_font())
+        self.console_output.setAccessibleName("Terminal output")
         self.console_output.setReadOnly(True)
-        self.console_output.setMaximumHeight(140)
-        layout.addWidget(self.console_output)
+        self.terminal_scroll_timer = QtCore.QTimer(self)
+        self.terminal_scroll_timer.setSingleShot(True)
+        self.terminal_scroll_timer.timeout.connect(self.scroll_terminal_to_bottom)
+        self.console_output.verticalScrollBar().rangeChanged.connect(
+            lambda _minimum, _maximum: self.scroll_terminal_to_bottom()
+        )
+        self.console_output.setMinimumHeight(48)
+        layout.addWidget(self.console_output, 1)
 
         self.console_input = QtWidgets.QLineEdit()
+        self.console_input.setObjectName("TerminalInput")
+        self.console_input.setFont(terminal_font())
+        self.console_input.setAccessibleName("Python command")
         self.console_input.setPlaceholderText(">>>")
         self.console_input.returnPressed.connect(self.execute_command)
         layout.addWidget(self.console_input)
         return frame
 
     def add_parameter_group(self, title, fields):
+        self.parameter_sections[title] = [key for key, _, _ in fields]
         group = QtWidgets.QGroupBox(title)
+        if title == "Current PI":
+            group.setToolTip(tip("Current PI group"))
         layout = QtWidgets.QGridLayout(group)
+        layout.setColumnStretch(0, 1)
+        layout.setColumnStretch(1, 1)
+        layout.setVerticalSpacing(8)
         for idx, (key, label, kind) in enumerate(fields):
-            layout.addWidget(QtWidgets.QLabel(label), idx, 0)
+            field_label = QtWidgets.QLabel(label)
+            layout.addWidget(field_label, idx, 0)
             if kind == "bool":
                 widget = QtWidgets.QCheckBox()
             elif kind == "int":
@@ -997,16 +1000,18 @@ class LivePlotter(QtWidgets.QMainWindow):
                         widget.setMinimum(0.00000001 if key.endswith(".d_fc") else 0.0)
                 widget.setSingleStep(0.01)
                 widget.setKeyboardTracking(False)
+            field_label.setBuddy(widget)
+            field_label.setToolTip(parameter_tip(key))
+            widget.setToolTip(parameter_tip(key))
+            widget.setAccessibleName(label)
             layout.addWidget(widget, idx, 1)
             self.parameter_widgets[key] = widget
         self.parameters_layout.addWidget(group)
 
     def create_console_page(self):
-        page, layout = self.page_widget()
-
-        title = QtWidgets.QLabel("Terminal")
-        title.setObjectName("MetricValue")
-        layout.addWidget(title)
+        page, layout = self.page_widget(
+            'Console', 'Run Python commands in the persistent terminal below.', True
+        )
 
         message = QtWidgets.QLabel(
             "The interactive Python console is docked at the bottom of every page. "
@@ -1022,57 +1027,36 @@ class LivePlotter(QtWidgets.QMainWindow):
         layout.addStretch()
         return page
 
-    def detach_plot_panel(self):
-        parent = self.plot_panel.parentWidget()
+    def detach_plot_workspace(self):
+        parent = self.plot_workspace.parentWidget()
         if parent is not None and parent.layout() is not None:
-            parent.layout().removeWidget(self.plot_panel)
-        self.plot_panel.setParent(None)
+            parent.layout().removeWidget(self.plot_workspace)
+        self.plot_workspace.setParent(None)
 
     def attach_plot_to_page(self):
-        self.detach_plot_panel()
-        self.plot_page_host_layout.addWidget(self.plot_panel)
-        self.side_plot_container.setVisible(False)
+        self.detach_plot_workspace()
+        self.plot_page_host_layout.addWidget(self.plot_workspace)
         if self.float_plot_window is not None:
             self.float_plot_window.hide()
         self.plot_host = "page"
         self.plot_location_label.setText("Realtime Plot")
-        self.side_plot_action.setChecked(False)
-        self.float_plot_action.setChecked(False)
-
-    def attach_plot_to_side(self):
-        self.detach_plot_panel()
-        self.side_plot_layout.addWidget(self.plot_panel)
-        self.side_plot_container.setVisible(True)
-        if self.float_plot_window is not None:
-            self.float_plot_window.hide()
-        self.plot_host = "side"
-        self.plot_location_label.setText("Realtime Plot - Side Dock")
-        self.side_plot_action.setChecked(True)
         self.float_plot_action.setChecked(False)
 
     def attach_plot_to_float(self):
-        self.detach_plot_panel()
+        self.detach_plot_workspace()
         if self.float_plot_window is None:
             self.float_plot_window = QtWidgets.QDialog(self)
             self.float_plot_window.setWindowTitle("sf-Motion Realtime Plot")
-            self.float_plot_window.resize(900, 620)
+            self.float_plot_window.resize(1200, 620)
             float_layout = QtWidgets.QVBoxLayout(self.float_plot_window)
             float_layout.setContentsMargins(8, 8, 8, 8)
             self.float_plot_window.finished.connect(self.on_float_plot_closed)
-        self.float_plot_window.layout().addWidget(self.plot_panel)
-        self.side_plot_container.setVisible(False)
+        self.float_plot_window.layout().addWidget(self.plot_workspace)
         self.float_plot_window.show()
         self.float_plot_window.raise_()
         self.plot_host = "float"
         self.plot_location_label.setText("Realtime Plot - Floating Window")
-        self.side_plot_action.setChecked(False)
         self.float_plot_action.setChecked(True)
-
-    def toggle_side_plot(self, checked):
-        if checked:
-            self.attach_plot_to_side()
-        else:
-            self.attach_plot_to_page()
 
     def toggle_float_plot(self, checked):
         if checked:
@@ -1087,14 +1071,23 @@ class LivePlotter(QtWidgets.QMainWindow):
     def show_page(self, index):
         self.pages.setCurrentIndex(index)
 
+    def scroll_terminal_to_bottom(self):
+        scrollbar = self.console_output.verticalScrollBar()
+        scrollbar.setValue(scrollbar.maximum())
+
+    def append_terminal_output(self, text):
+        self.console_output.appendPlainText(str(text))
+        self.scroll_terminal_to_bottom()
+        self.terminal_scroll_timer.start(0)
+
     def log(self, message):
         print(message)
         if hasattr(self, "console_output"):
-            self.console_output.appendPlainText(str(message))
+            self.append_terminal_output(str(message))
 
     def echo_command(self, command):
         if hasattr(self, "console_output"):
-            self.console_output.appendPlainText(f">>> {command}")
+            self.append_terminal_output(f">>> {command}")
 
     def setup_console_completion(self):
         words = self.build_completion()
@@ -1119,7 +1112,7 @@ class LivePlotter(QtWidgets.QMainWindow):
         if not cmd:
             return
 
-        self.console_output.appendPlainText(f">>> {cmd}")
+        self.append_terminal_output(f">>> {cmd}")
         try:
             buffer = io.StringIO()
             with contextlib.redirect_stdout(buffer):
@@ -1131,9 +1124,9 @@ class LivePlotter(QtWidgets.QMainWindow):
                     exec(cmd, globals(), self.console_namespace)
             out = buffer.getvalue()
             if out:
-                self.console_output.appendPlainText(out.rstrip())
+                self.append_terminal_output(out.rstrip())
         except Exception:
-            self.console_output.appendPlainText(traceback.format_exc())
+            self.append_terminal_output(traceback.format_exc())
         self.console_input.clear()
 
     def show_connection_dialog(self):
@@ -1360,6 +1353,7 @@ class LivePlotter(QtWidgets.QMainWindow):
             self.setpoint_spin.setSingleStep(1.0)
         self.setpoint_spin.setValue(self.control_mode_setpoints.get(mode, 0.0))
         self.setpoint_spin.blockSignals(False)
+        update_control_tooltips(self, mode)
 
     def on_setpoint_value_changed(self, value):
         self.control_mode_setpoints[self.active_control_mode] = value
@@ -1474,6 +1468,7 @@ class LivePlotter(QtWidgets.QMainWindow):
         self.channel_checks = {}
         for name in sorted(self.plotter_dict):
             check = QtWidgets.QCheckBox(name)
+            check.setToolTip(tip("Channel checkbox"))
             check.toggled.connect(lambda checked, channel=name: self.on_channel_toggled(channel, checked))
             self.channel_layout.addWidget(check)
             self.channel_checks[name] = check
@@ -1688,7 +1683,7 @@ class LivePlotter(QtWidgets.QMainWindow):
             out = buffer.getvalue().strip()
             if out:
                 self.commissioning_status.appendPlainText(out)
-                self.console_output.appendPlainText(out)
+                self.append_terminal_output(out)
             self.log("Self commissioning command sequence started")
         except Exception:
             text = traceback.format_exc()
@@ -1769,11 +1764,6 @@ class LivePlotter(QtWidgets.QMainWindow):
         except Exception:
             self.log(traceback.format_exc())
 
-    def set_original_pid_values(self):
-        for key, value in ORIGINAL_PID_VALUES.items():
-            self.set_parameter_value(key, value)
-        self.log("Loaded original firmware PID values into the parameter fields")
-
     def set_parameter_group(self, prefix, values):
         for key, value in values.items():
             self.set_parameter_value(f"{prefix}.{key}", value)
@@ -1791,14 +1781,103 @@ class LivePlotter(QtWidgets.QMainWindow):
             return 1 if widget.isChecked() else 0
         return widget.value()
 
+    def parameter_document(self, sections):
+        values = {}
+        for section in sections:
+            for key in self.parameter_sections[section]:
+                widget = self.parameter_widgets[key]
+                values[key] = (
+                    widget.isChecked() if isinstance(widget, QtWidgets.QCheckBox)
+                    else self.parameter_value(key)
+                )
+        return {"version": 1, "parameters": values}
+
+    def validate_parameter_document(self, document):
+        if not isinstance(document, dict):
+            raise ValueError("Expected a JSON object.")
+        if type(document.get("version")) is not int or document["version"] != 1:
+            raise ValueError("Unsupported parameter file version; expected version 1.")
+        values = document.get("parameters")
+        if not isinstance(values, dict) or not values:
+            raise ValueError("The parameters mapping must contain at least one parameter.")
+        for key, value in values.items():
+            if key not in self.parameter_widgets:
+                raise ValueError(f"Unknown parameter: {key}")
+            widget = self.parameter_widgets[key]
+            if isinstance(widget, QtWidgets.QCheckBox):
+                if type(value) is not bool:
+                    raise ValueError(f"{key} must be a boolean.")
+            else:
+                if isinstance(widget, QtWidgets.QSpinBox):
+                    valid_type = type(value) is int
+                else:
+                    valid_type = type(value) in (int, float)
+                if not valid_type:
+                    raise ValueError(f"{key} has an invalid numeric type.")
+                # Check bounds first, so arbitrarily large JSON integers never overflow
+                # during conversion to a Qt or Python floating-point value.
+                if not widget.minimum() <= value <= widget.maximum() or not math.isfinite(value):
+                    raise ValueError(
+                        f"{key} must be finite and between "
+                        f"{widget.minimum()} and {widget.maximum()}."
+                    )
+        return values
+
+    def load_parameter_document(self, document):
+        values = self.validate_parameter_document(document)
+        for key, value in values.items():
+            self.set_parameter_value(key, value)
+        if set(values) == set(self.parameter_widgets):
+            self.parameters_loaded = True
+
+    def report_parameter_file_error(self, action, error):
+        message = f"Could not {action} parameters: {error}"
+        self.log(message)
+        QtWidgets.QMessageBox.warning(self, "Parameter File Error", message)
+
+    def export_parameters(self):
+        dialog = ParameterExportDialog(self.parameter_sections, self)
+        if dialog.exec_() != QtWidgets.QDialog.Accepted:
+            return
+        sections = dialog.selected_sections()
+        if not sections:
+            return
+        filename, _ = QtWidgets.QFileDialog.getSaveFileName(
+            self, "Export Parameters", "parameters.json", "JSON files (*.json)"
+        )
+        if not filename:
+            return
+        try:
+            document = self.parameter_document(sections)
+            self.validate_parameter_document(document)
+            Path(filename).write_text(
+                json.dumps(document, indent=2, allow_nan=False) + "\n", encoding="utf-8"
+            )
+            self.log(f"Exported {len(document['parameters'])} parameters to {filename}")
+        except (OSError, ValueError) as error:
+            self.report_parameter_file_error("export", error)
+
+    def import_parameters(self):
+        filename, _ = QtWidgets.QFileDialog.getOpenFileName(
+            self, "Import Parameters", "", "JSON files (*.json)"
+        )
+        if not filename:
+            return
+        try:
+            document = json.loads(Path(filename).read_text(encoding="utf-8"))
+            self.load_parameter_document(document)
+            self.log(f"Imported parameters from {filename}. Review fields before applying.")
+        except (OSError, ValueError) as error:
+            self.report_parameter_file_error("import", error)
+
     def apply_all_parameters(self):
         motor = self.require_motor()
         if motor is None:
             return
         if not self.parameters_loaded:
             self.log(
-                "Apply All Parameters blocked. Press Read All Parameters first, "
-                "or use Apply Original PID to write only the original PID values."
+                "Apply All Parameters blocked. Read all parameters or import a complete "
+                "parameter file first."
             )
             return
         try:
@@ -1887,84 +1966,6 @@ class LivePlotter(QtWidgets.QMainWindow):
         except Exception:
             self.parameters_loaded = False
             self.log("Parameters may be partially applied; read all parameters before retrying")
-            self.log(traceback.format_exc())
-
-    def apply_original_pid_values(self):
-        self.parameters_loaded = False
-        motor = self.require_motor()
-        if motor is None:
-            return
-        try:
-            self.set_original_pid_values()
-            self.echo_command(
-                "motor.set_pid_id("
-                f"{ORIGINAL_PID_VALUES['pid_id.kp']!r}, "
-                f"{ORIGINAL_PID_VALUES['pid_id.ki']!r}, "
-                f"{ORIGINAL_PID_VALUES['pid_id.deadband']!r})"
-            )
-            motor.set_pid_id(
-                ORIGINAL_PID_VALUES["pid_id.kp"],
-                ORIGINAL_PID_VALUES["pid_id.ki"],
-                ORIGINAL_PID_VALUES["pid_id.deadband"],
-            )
-            self.echo_command(
-                "motor.set_pid_iq("
-                f"{ORIGINAL_PID_VALUES['pid_iq.kp']!r}, "
-                f"{ORIGINAL_PID_VALUES['pid_iq.ki']!r}, "
-                f"{ORIGINAL_PID_VALUES['pid_iq.deadband']!r})"
-            )
-            motor.set_pid_iq(
-                ORIGINAL_PID_VALUES["pid_iq.kp"],
-                ORIGINAL_PID_VALUES["pid_iq.ki"],
-                ORIGINAL_PID_VALUES["pid_iq.deadband"],
-            )
-            self.echo_command(
-                "motor.set_pid_speed("
-                f"{ORIGINAL_PID_VALUES['pid_speed.kp']!r}, "
-                f"{ORIGINAL_PID_VALUES['pid_speed.ki']!r}, "
-                f"{ORIGINAL_PID_VALUES['pid_speed.out_max']!r}, "
-                f"{ORIGINAL_PID_VALUES['pid_speed.deadband']!r})"
-            )
-            motor.set_pid_speed(
-                ORIGINAL_PID_VALUES["pid_speed.kp"],
-                ORIGINAL_PID_VALUES["pid_speed.ki"],
-                ORIGINAL_PID_VALUES["pid_speed.out_max"],
-                ORIGINAL_PID_VALUES["pid_speed.deadband"],
-            )
-            self.echo_command(
-                "motor.set_pid_position("
-                f"{ORIGINAL_PID_VALUES['pid_position.kp']!r}, "
-                f"{ORIGINAL_PID_VALUES['pid_position.ki']!r}, "
-                f"{ORIGINAL_PID_VALUES['pid_position.kd']!r}, "
-                f"{ORIGINAL_PID_VALUES['pid_position.out_max']!r}, "
-                f"{ORIGINAL_PID_VALUES['pid_position.deadband']!r}, "
-                f"{ORIGINAL_PID_VALUES['pid_position.d_fc']!r})"
-            )
-            motor.set_pid_position(
-                ORIGINAL_PID_VALUES["pid_position.kp"],
-                ORIGINAL_PID_VALUES["pid_position.ki"],
-                ORIGINAL_PID_VALUES["pid_position.kd"],
-                ORIGINAL_PID_VALUES["pid_position.out_max"],
-                ORIGINAL_PID_VALUES["pid_position.deadband"],
-                ORIGINAL_PID_VALUES["pid_position.d_fc"],
-            )
-            self.echo_command(
-                "motor.set_field_weakening("
-                f"{ORIGINAL_PID_VALUES['field_weakening.kp']!r}, "
-                f"{ORIGINAL_PID_VALUES['field_weakening.ki']!r}, "
-                f"{ORIGINAL_PID_VALUES['field_weakening.out_min']!r})"
-            )
-            motor.set_field_weakening(
-                ORIGINAL_PID_VALUES["field_weakening.kp"],
-                ORIGINAL_PID_VALUES["field_weakening.ki"],
-                ORIGINAL_PID_VALUES["field_weakening.out_min"],
-            )
-            self.echo_command("motor.set_field_weakening_enable(0)")
-            motor.set_field_weakening_enable(0)
-            self.echo_command("motor.set_mtpa_enable(0)")
-            motor.set_mtpa_enable(0)
-            self.log("Applied original firmware PID values")
-        except Exception:
             self.log(traceback.format_exc())
 
     def closeEvent(self, event):
